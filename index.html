@@ -3,7 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Praxis — симулятор профессиональной практики</title>
+<title>Dialogic — симулятор профессиональной практики</title>
+<meta name="description" content="Симулятор трудных разговоров для студентов колледжей: диалог с клиентом или пациентом и разбор по профессиональному чек-листу с дословными цитатами из ваших реплик.">
+<!-- Превью ссылки в мессенджерах и соцсетях -->
+<meta property="og:title" content="Dialogic — симулятор профессиональной практики">
+<meta property="og:description" content="Симулятор трудных разговоров для студентов колледжей: диалог с клиентом или пациентом и разбор по профессиональному чек-листу с дословными цитатами из ваших реплик.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://dialogic-app.vercel.app/">
+<meta name="twitter:card" content="summary_large_image">
+<!-- Фавикон: монограмма D на фоне --brand (#1F4E5F), нарисована контуром — не зависит от шрифтов -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231F4E5F'/%3E%3Cpath fill='%23fff' fill-rule='evenodd' d='M19 14h13c11 0 19 7 19 18s-8 18-19 18H19zM27 21v22h5c7 0 11-4.5 11-11s-4-11-11-11z'/%3E%3C/svg%3E">
 <style>
   :root {
     /* PHASE_3_5 A1: фон заметно темнее белых карточек */
@@ -430,7 +439,7 @@
 <header class="appbar">
   <div class="appbar-in">
     <div class="appbar-brand">
-      <b>Praxis</b>
+      <b>Dialogic</b>
       <span class="caption" id="hdr-spec"></span>
     </div>
     <div class="appbar-right">
@@ -522,7 +531,7 @@
     </div>
 
     <div class="band-foot">
-      <div class="wrap-x"><p class="caption footer">Praxis · VentureHack 2026 · Трек 2 — EduTech</p></div>
+      <div class="wrap-x"><p class="caption footer">Dialogic · VentureHack 2026 · EduTech</p></div>
     </div>
   </section>
 
@@ -2113,7 +2122,7 @@
     var url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     var a = document.createElement("a");
     a.href = url;
-    a.download = "praxis-" + SCENARIO.id + "-" + new Date().toISOString().slice(0, 10) + ".csv";
+    a.download = "dialogic-" + SCENARIO.id + "-" + new Date().toISOString().slice(0, 10) + ".csv";
     document.body.appendChild(a);
     a.click();
     a.remove();
