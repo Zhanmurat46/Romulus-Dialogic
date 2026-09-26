@@ -14,6 +14,21 @@
 <!-- Фавикон: монограмма D на фоне --brand (#1F4E5F), нарисована контуром — не зависит от шрифтов -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231F4E5F'/%3E%3Cpath fill='%23fff' fill-rule='evenodd' d='M19 14h13c11 0 19 7 19 18s-8 18-19 18H19zM27 21v22h5c7 0 11-4.5 11-11s-4-11-11-11z'/%3E%3C/svg%3E">
 <style>
+  /* Шрифты — самохостинг из /fonts/ (SIL OFL 1.1), без CDN. Два поднабора: латиница и кириллица —
+     браузер скачивает только те файлы, символы которых реально есть на странице. */
+  @font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/inter-latin-400-normal.woff2) format("woff2"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+  @font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/inter-cyrillic-400-normal.woff2) format("woff2"); unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
+  @font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: swap; src: url(fonts/inter-latin-600-normal.woff2) format("woff2"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+  @font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: swap; src: url(fonts/inter-cyrillic-600-normal.woff2) format("woff2"); unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
+  @font-face { font-family: "Inter"; font-style: normal; font-weight: 700; font-display: swap; src: url(fonts/inter-latin-700-normal.woff2) format("woff2"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+  @font-face { font-family: "Inter"; font-style: normal; font-weight: 700; font-display: swap; src: url(fonts/inter-cyrillic-700-normal.woff2) format("woff2"); unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
+  @font-face { font-family: "Literata"; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/literata-latin-400-normal.woff2) format("woff2"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+  @font-face { font-family: "Literata"; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/literata-cyrillic-400-normal.woff2) format("woff2"); unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
+  @font-face { font-family: "Literata"; font-style: normal; font-weight: 600; font-display: swap; src: url(fonts/literata-latin-600-normal.woff2) format("woff2"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+  @font-face { font-family: "Literata"; font-style: normal; font-weight: 600; font-display: swap; src: url(fonts/literata-cyrillic-600-normal.woff2) format("woff2"); unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
+  @font-face { font-family: "Literata"; font-style: normal; font-weight: 700; font-display: swap; src: url(fonts/literata-latin-700-normal.woff2) format("woff2"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+  @font-face { font-family: "Literata"; font-style: normal; font-weight: 700; font-display: swap; src: url(fonts/literata-cyrillic-700-normal.woff2) format("woff2"); unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
+
   :root {
     /* PHASE_3_5 A1: фон заметно темнее белых карточек */
     --paper: #F1EDE4;
@@ -32,6 +47,16 @@
     --accent-3: #6B8F71;
     --accent-4: #8C7A9B;
     --track: #EDEAE3;
+    /* DIALOGIC_FINAL_PLAN 4: редизайн — новые токены, старые не менялись */
+    --ink-deep: #14333E;   /* тёмная полоса и подвал — единственное цветное поле */
+    --brand-hover: #1A4351;
+    --paper-2: #E9E3D7;
+    --shadow-1: 0 1px 2px rgba(20,51,62,.05);
+    --shadow-2: 0 4px 16px -4px rgba(20,51,62,.10);
+    --shadow-3: 0 12px 32px -8px rgba(20,51,62,.16);
+    --r-sm: 10px; --r-md: 14px; --r-lg: 20px;
+    --font-ui: "Inter", -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-head: "Literata", Georgia, "Times New Roman", serif;
   }
 
   * { box-sizing: border-box; }
@@ -39,7 +64,7 @@
   body {
     margin: 0;
     color: var(--ink);
-    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family: var(--font-ui);
     font-size: 16px;
     line-height: 1.55;
     /* A2: едва заметная точечная фактура, прозрачность не выше .08 */
@@ -50,19 +75,28 @@
 
   .wrap { max-width: 760px; margin: 0 auto; padding: 48px 16px; }
   .wrap-x { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+  /* Широкая колонка главной — та же ширина, что у шапки */
+  .wrap-l { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
 
-  /* A3: постоянная шапка на всех экранах */
+  /* A3: постоянная шапка на всех экранах. Высота 56px связана с высотой экрана диалога — не менять */
   .appbar {
     position: sticky; top: 0; z-index: 10;
     height: 56px;
     background: var(--card); border-bottom: 1px solid var(--line);
+    transition: box-shadow 200ms;
   }
+  .appbar.scrolled { box-shadow: var(--shadow-2); }
   .appbar-in {
     max-width: 1040px; height: 100%; margin: 0 auto; padding: 0 24px;
     display: flex; align-items: center; justify-content: space-between; gap: 24px;
   }
+  /* На экранах-«листах» (сценарий, анализ, результат) шапка по ширине колонки .wrap.
+     На главной — по .wrap-l, в диалоге — шире колонки: там в шапке шкала и точки прогресса */
+  body:has(#screen-scenario:not(.hidden)) .appbar-in,
+  body:has(#screen-analysis:not(.hidden)) .appbar-in,
+  body:has(#screen-result:not(.hidden)) .appbar-in { max-width: 760px; padding: 0 16px; }
+  .appbar-brand b { font-family: var(--font-head); font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
   .appbar-brand { display: flex; align-items: baseline; gap: 12px; min-width: 0; white-space: nowrap; }
-  .appbar-brand b { font-size: 15px; font-weight: 600; }
   .appbar-right { display: flex; align-items: center; gap: 24px; }
   .hdr-rank { white-space: nowrap; }
   .hdr-dialog { display: none; }
@@ -76,14 +110,17 @@
   .legend .v, .profile-row .v, .items-group .caption { font-variant-numeric: tabular-nums; }
 
   /* Типографика */
-  h1 { font-size: 26px; font-weight: 600; line-height: 1.25; margin: 0 0 8px; }
-  h2 { font-size: 18px; font-weight: 600; line-height: 1.35; margin: 0 0 8px; }
+  /* Заголовки — Literata (редакционный сериф), интерфейс — Inter */
+  h1, h2, .sc-card h3, .step h3, .outcome { font-family: var(--font-head); }
+  .chat-top h2 { font-family: var(--font-ui); }
+  h1 { font-size: 30px; font-weight: 600; line-height: 1.2; letter-spacing: -.015em; margin: 0 0 8px; }
+  h2 { font-size: 20px; font-weight: 600; line-height: 1.3; margin: 0 0 8px; }
   h3 { font-size: 16px; font-weight: 600; line-height: 1.4; margin: 0 0 4px; }
   p { margin: 0 0 16px; max-width: 680px; }
   .caption { font-size: 13px; line-height: 1.4; color: var(--ink-soft); }
   .eyebrow {
-    font-size: 13px; line-height: 1.4; font-weight: 600;
-    letter-spacing: .08em; text-transform: uppercase;
+    font-size: 12px; line-height: 1.4; font-weight: 600;
+    letter-spacing: .10em; text-transform: uppercase;
     color: var(--ink-soft); margin: 0 0 8px;
   }
 
@@ -96,8 +133,8 @@
   .card {
     background: var(--card);
     border: 1px solid var(--line);
-    border-radius: 14px;
-    box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-1);
     padding: 24px;
   }
   .card + .card { margin-top: 16px; }
@@ -110,11 +147,12 @@
     padding: 12px 22px;
     cursor: pointer;
     border: 1px solid transparent;
-    transition: background-color 150ms, border-color 150ms;
+    transition: background-color 150ms, border-color 150ms, color 150ms, transform 100ms;
   }
-  .btn-primary { background: var(--brand); color: #fff; border-color: transparent; }
-  .btn-primary:hover:not(:disabled) { opacity: .9; }
-  .btn-secondary { background: var(--card); color: var(--brand); border-color: var(--brand); }
+  .btn:active:not(:disabled) { transform: translateY(1px); }
+  .btn-primary { background: var(--brand); color: #fff; border-color: transparent; box-shadow: var(--shadow-1); }
+  .btn-primary:hover:not(:disabled) { background: var(--brand-hover); }
+  .btn-secondary { background: var(--card); color: var(--brand); border-color: var(--brand); box-shadow: var(--shadow-1); }
   .btn-secondary:hover:not(:disabled) { background: var(--brand-soft); }
   .btn-tertiary { background: transparent; color: var(--ink-soft); }
   .btn-tertiary:hover:not(:disabled) { color: var(--ink); }
@@ -136,36 +174,54 @@
   .input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
 
   /* ---------- 1. Главная ---------- */
-  .hero h1 { font-size: 38px; line-height: 1.15; letter-spacing: -.01em; margin: 0 0 16px; }
-  .hero-sub { font-size: 17px; color: var(--ink-soft); }
-  .hero .actions { margin-top: 32px; }
+  .hero h1 { font-size: 56px; line-height: 1.05; letter-spacing: -.025em; margin: 0 0 20px; max-width: 840px; }
+  .hero-sub { font-size: 17px; line-height: 1.55; color: var(--ink-soft); max-width: 640px; }
+  .hero .actions { margin-top: 32px; align-items: center; }
+  .hero .btn-tertiary { color: var(--brand); }
+  .hero .btn-tertiary:hover:not(:disabled) { color: var(--brand-hover); text-decoration: underline; text-underline-offset: 3px; }
   .hero-note { margin-top: 12px; }
+  /* Строка доверия под кнопками: факты о продукте, без цифр, которых нет */
+  .trust { display: flex; flex-wrap: wrap; gap: 6px 20px; max-width: none; }
+  .trust span { display: inline-flex; align-items: center; gap: 6px; }
+  .trust span::before {
+    content: ""; width: 14px; height: 14px; flex: none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M3 7.3l2.6 2.6L11 4.4' fill='none' stroke='%231F4E5F' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 14px no-repeat;
+  }
 
   .block { margin-top: 56px; }
-  .block-title { font-size: 22px; line-height: 1.3; margin: 0 0 24px; }
+  .block-title { font-size: 30px; line-height: 1.2; letter-spacing: -.015em; margin: 0 0 28px; }
 
-  /* A5: полосы на главной — белые и песочные через одну, между блоками 64px */
-  .band { padding: 64px 0; }
+  /* A5: полосы на главной — белые и песочные через одну */
+  .band { padding: 72px 0; }
   .band-card { background: var(--card); border-bottom: 1px solid var(--line); }
   .band-card .rank-plate { background: var(--paper); }
-  .band-foot { padding: 24px 0 48px; }
+  .band-foot { padding: 28px 0 40px; }
 
-  /* PHASE_3_5 B1: выбор сценария — две карточки в ряд, выбранная с границей --brand */
-  .pick-title { margin-top: 24px; }
-  .sc-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  /* PHASE_3_5 B1: выбор сценария. Карточек сколько угодно: сетка сама раскладывает их в ряд */
+  .pick-title { margin-top: 40px; }
+  .sc-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
   .sc-card {
     font: inherit; color: inherit; text-align: left; cursor: pointer;
+    position: relative; overflow: hidden;
     display: flex; flex-direction: column; align-items: flex-start;
-    padding: 20px 24px; background: var(--paper);
-    transition: border-color 150ms, box-shadow 150ms, background-color 150ms;
+    padding: 22px 24px 20px 28px; background: var(--card);
+    border-radius: var(--r-lg);
+    transition: border-color 150ms, box-shadow 150ms, background-color 150ms, transform 150ms;
   }
+  /* Цветная полоса слева — по специальности, в порядке карточек */
+  .sc-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--strip); }
+  .sc-card:nth-child(3n+1) { --strip: var(--accent-1); }
+  .sc-card:nth-child(3n+2) { --strip: var(--accent-2); }
+  .sc-card:nth-child(3n+3) { --strip: var(--accent-3); }
   .sc-card + .sc-card { margin-top: 0; }
-  .sc-card:hover { border-color: var(--brand); }
-  .sc-card.selected { background: var(--card); border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand); }
+  .sc-card:hover { box-shadow: var(--shadow-2); transform: translateY(-2px); }
+  .sc-card.selected { background: var(--brand-soft); border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand); }
+  .sc-card.selected:hover { box-shadow: 0 0 0 1px var(--brand), var(--shadow-2); }
   .sc-card:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--brand-soft), 0 0 0 4px var(--brand); }
   .sc-card .badge { margin-bottom: 12px; }
-  .sc-card h3 { font-size: 17px; margin-bottom: 4px; }
-  .sc-blurb { font-size: 14px; line-height: 1.5; color: var(--ink-soft); margin: 0 0 12px; }
+  .sc-card.selected .badge { background: var(--card); }
+  .sc-card h3 { font-size: 20px; line-height: 1.25; margin-bottom: 6px; }
+  .sc-blurb { font-size: 15px; line-height: 1.5; color: var(--ink-soft); margin: 0 0 14px; }
   .sc-card .caption { margin-top: auto; }
 
   /* PHASE_3_5 B5: плашка об учебном характере симуляции */
@@ -178,23 +234,52 @@
 
   .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
   .steps .card + .card { margin-top: 0; }
-  .step-num { font-size: 32px; font-weight: 700; line-height: 1; color: var(--track); margin-bottom: 16px; }
-  .step p { font-size: 14px; line-height: 1.5; color: var(--ink-soft); margin: 0; }
+  /* Иконка шага — тот же линейный стиль, что у значков: обводка 2px, без заливки */
+  .step-ico {
+    width: 48px; height: 48px; border-radius: 50%; margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--brand-soft); color: var(--brand);
+  }
+  .step-no { margin: 0 0 4px; }
+  .step h3 { font-size: 20px; line-height: 1.25; margin-bottom: 8px; }
+  .step p { font-size: 15px; line-height: 1.5; color: var(--ink-soft); margin: 0; }
 
-  .cmp { display: grid; grid-template-columns: 1fr 1fr; column-gap: 8px; }
-  .cmp > div { padding: 12px 24px; font-size: 15px; line-height: 1.5; }
-  .cmp .l { background: var(--track); }
-  .cmp .r { background: var(--brand-soft); border-left: 3px solid var(--brand); }
-  .cmp .head { padding-top: 20px; font-weight: 600; }
-  .cmp .r.head { color: var(--brand); }
+  /* Сравнение: слева приглушённый обычный чат, справа белая колонка симулятора в рамке --brand */
+  .cmp { display: grid; grid-template-columns: 1fr 1fr; column-gap: 16px; }
+  .cmp > div { padding: 14px 24px; font-size: 15px; line-height: 1.5; }
+  .cmp .l { background: var(--paper-2); color: var(--ink-soft); }
+  .cmp .r { position: relative; background: var(--card); color: var(--ink); padding-left: 56px;
+            border-left: 1.5px solid var(--brand); border-right: 1.5px solid var(--brand); }
+  .cmp > div:not(.head) { border-top: 1px solid rgba(20,51,62,.08); }
+  .cmp .r:not(.head) { border-top-color: var(--line); }
+  .cmp .r:not(.head)::before {
+    content: ""; position: absolute; left: 22px; top: 16px; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--brand-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2l2.3 2.3 4.7-4.9' fill='none' stroke='%231F4E5F' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 12px no-repeat;
+  }
+  .cmp .head { padding-top: 20px; padding-bottom: 16px; font-family: var(--font-head); font-size: 18px; font-weight: 600; }
+  .cmp .r.head { color: var(--brand); padding-left: 24px; border-top: 1.5px solid var(--brand); }
   .cmp .last { padding-bottom: 20px; }
-  .cmp .l.head { border-radius: 14px 14px 0 0; }
-  .cmp .r.head { border-radius: 0 14px 0 0; }
-  .cmp .l.last { border-radius: 0 0 14px 14px; }
-  .cmp .r.last { border-radius: 0 0 14px 0; }
+  .cmp .l.head { border-radius: var(--r-md) var(--r-md) 0 0; }
+  .cmp .r.head { border-radius: var(--r-md) var(--r-md) 0 0; }
+  .cmp .l.last { border-radius: 0 0 var(--r-md) var(--r-md); }
+  .cmp .r.last { border-radius: 0 0 var(--r-md) var(--r-md); border-bottom: 1.5px solid var(--brand); }
   .cmp .quote { font-style: italic; }
 
-  .audience { font-size: 17px; }
+  /* «Для кого» и подвал — единственное цветное поле страницы */
+  .band-deep { background: var(--ink-deep); color: #fff; }
+  .band-deep .eyebrow { color: rgba(255,255,255,.72); }
+  .band-deep .block-title { color: #fff; }
+  .audience { font-size: 17px; line-height: 1.6; color: rgba(255,255,255,.88); max-width: 720px; margin: 0; }
+  .band-foot.band-deep { border-top: 1px solid rgba(255,255,255,.12); }
+  .band-foot.band-deep .caption { color: rgba(255,255,255,.72); }
+
+  /* Доказательства: три числа в ряд. Значения — в константе EVIDENCE, пустые не показываются */
+  .ev-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px 32px; }
+  .ev-item { border-top: 2px solid var(--brand); padding-top: 16px; }
+  .ev-num { font-family: var(--font-head); font-size: 48px; font-weight: 600; line-height: 1.05;
+            letter-spacing: -.02em; color: var(--ink); font-variant-numeric: tabular-nums lining-nums; }
+  .ev-label { font-size: 15px; line-height: 1.45; color: var(--ink-soft); margin: 8px 0 0; }
+  .ev-note { margin: 24px 0 0; }
 
   .footer { margin: 0; }
 
@@ -411,9 +496,15 @@
   @media (max-width: 640px) {
     .profile-row { grid-template-columns: 1fr 80px 36px; }
     .res-pat { border-left: 0; padding-left: 0; }
-    .hero h1 { font-size: 30px; }
+    .hero h1 { font-size: 34px; line-height: 1.1; }
+    .block-title { font-size: 24px; }
+    .band { padding: 48px 0; }
     .steps, .groups, .sc-cards { grid-template-columns: 1fr; }
+    .cmp { column-gap: 8px; }
     .cmp > div { padding-left: 16px; padding-right: 16px; }
+    .cmp .r:not(.head) { padding-left: 44px; }
+    .cmp .r:not(.head)::before { left: 14px; }
+    .ev-num { font-size: 40px; }
   }
   /* Анимации — только в помощь пониманию; при системной настройке «меньше движения» — выключены */
   @media (prefers-reduced-motion: reduce) {
@@ -429,6 +520,7 @@
 
   @media (max-width: 860px) {
     .appbar-in { padding: 0 16px; gap: 16px; }
+    .wrap-l { padding: 0 16px; }
     .appbar-right { gap: 16px; }
     .hdr-pat-label, .appbar-brand .caption { display: none; }
     body.in-dialog .hdr-rank { display: none; }
@@ -463,7 +555,7 @@
   <!-- 1. Главная: белые и песочные полосы через одну -->
   <section id="screen-start" class="screen">
     <div class="band band-card">
-      <div class="wrap-x hero">
+      <div class="wrap-l hero">
         <p class="eyebrow">Симулятор профессиональной практики</p>
         <h1>Отработайте сложную ситуацию до того, как встретите её на практике</h1>
         <p class="hero-sub">Вы ведёте диалог с клиентом или пациентом. Потом получаете разбор по профессиональному чек-листу — с цитатами из ваших же реплик.</p>
@@ -471,9 +563,9 @@
         <div class="sc-cards" id="sc-cards"></div>
         <div class="actions">
           <button class="btn btn-primary" id="btn-start">Начать симуляцию</button>
-          <button class="btn btn-secondary" id="btn-demo" title="Demo-режим: готовый разбор, работает без сети">Посмотреть пример разбора</button>
+          <button class="btn btn-tertiary" id="btn-demo" title="Demo-режим: готовый разбор, работает без сети">Посмотреть пример разбора →</button>
         </div>
-        <p class="caption hero-note">Занимает 5–7 минут. Регистрация не нужна.</p>
+        <p class="caption hero-note trust"><span>5–7 минут</span><span>Без регистрации</span><span>Разбор по чек-листу с цитатами из ваших реплик</span><span>Пример разбора работает без сети</span></p>
         <div class="rank-plate">
           <span>Ваш ранг: <b id="rank-name"></b></span>
           <span class="caption" id="rank-next"></span>
@@ -482,22 +574,31 @@
     </div>
 
     <div class="band">
-      <div class="wrap-x">
+      <div class="wrap-l">
         <p class="eyebrow">Как это работает</p>
         <h2 class="block-title">Три шага от ситуации до разбора</h2>
         <div class="steps">
           <div class="card step">
-            <div class="step-num">01</div>
+            <div class="step-ico">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
+            </div>
+            <p class="eyebrow step-no">Шаг 1</p>
             <h3>Получаете ситуацию</h3>
             <p>Реальный случай с практики и чек-лист, по которому вас оценят</p>
           </div>
           <div class="card step">
-            <div class="step-num">02</div>
+            <div class="step-ico">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H9l-3 3v-3H5a2 2 0 0 1-2-2z"/><path d="M16 8h3a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-1v3l-3-3h-3a2 2 0 0 1-2-2"/></svg>
+            </div>
+            <p class="eyebrow step-no">Шаг 2</p>
             <h3>Ведёте диалог</h3>
             <p>Клиент реагирует на то, что вы говорите, а не по сценарию</p>
           </div>
           <div class="card step">
-            <div class="step-num">03</div>
+            <div class="step-ico">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l2 2 3-3M4 16l2 2 3-3M13 8h7M13 17h7"/></svg>
+            </div>
+            <p class="eyebrow step-no">Шаг 3</p>
             <h3>Видите разбор</h3>
             <p>Каждый вывод подкреплён дословной цитатой из вашей реплики</p>
           </div>
@@ -506,14 +607,16 @@
     </div>
 
     <div class="band band-card">
-      <div class="wrap-x">
+      <div class="wrap-l">
         <p class="eyebrow">Отличие</p>
         <h2 class="block-title">Чем отличается от обычного чата</h2>
         <div class="cmp">
           <div class="l head">Обычный ИИ-чат</div>
-          <div class="r head">Этот симулятор</div>
+          <div class="r head">Dialogic</div>
           <div class="l">Отвечает на вопросы</div>
           <div class="r">Играет клиента, который реагирует на ваше поведение</div>
+          <div class="l">Не замечает тона: отговорки и поиск виноватых ни на что не влияют</div>
+          <div class="r">Тренирует сдержанность: отговорки и обвинения снижают терпение собеседника, а пункт «не обвинил» проверяется отдельно</div>
           <div class="l">Даёт общий отзыв в свободной форме</div>
           <div class="r">Оценивает по профессиональному чек-листу</div>
           <div class="l last quote">«В целом неплохо, будьте вежливее»</div>
@@ -522,16 +625,26 @@
       </div>
     </div>
 
-    <div class="band">
-      <div class="wrap-x">
+    <div class="band band-deep">
+      <div class="wrap-l">
         <p class="eyebrow">Для кого</p>
         <h2 class="block-title">Студентам и преподавателям колледжей</h2>
         <p class="audience">Студенты гостиничного и сестринского дела, сервиса и продаж отрабатывают трудные разговоры до практики — один движок, свой профессиональный стандарт для каждой специальности. Преподаватель получает расшифровку и заполненный чек-лист.</p>
       </div>
     </div>
 
-    <div class="band-foot">
-      <div class="wrap-x"><p class="caption footer">Dialogic · VentureHack 2026 · EduTech</p></div>
+    <!-- Доказательства: числа из константы EVIDENCE в начале скрипта. Пока значений нет — блок скрыт -->
+    <div class="band band-card hidden" id="evidence">
+      <div class="wrap-l">
+        <p class="eyebrow">Проверено на студентах</p>
+        <h2 class="block-title">Что показали первые прогоны</h2>
+        <div class="ev-grid" id="ev-grid"></div>
+        <p class="caption ev-note" id="ev-note"></p>
+      </div>
+    </div>
+
+    <div class="band-foot band-deep">
+      <div class="wrap-l"><p class="caption footer">Dialogic · VentureHack 2026 · EduTech</p></div>
     </div>
   </section>
 
@@ -683,6 +796,18 @@
 </main>
 
 <script>
+  // ================= ДОКАЗАТЕЛЬСТВА (блок на главной) =================
+  // Только реальные цифры. Пустое value — число не показывается; все пустые — блок скрыт целиком.
+  // value — строка как есть: "12", "38%". note — источник и метод, например «Пилот, колледж N, 26.09.2026».
+  var EVIDENCE = {
+    items: [
+      { value: "", label: "прогонов студентов" },
+      { value: "", label: "студентов протестировали" },
+      { value: "", label: "чаще всего не выполняется пункт «…»" }
+    ],
+    note: ""
+  };
+
   // ================= СЦЕНАРИИ =================
   // Новый сценарий — новый объект в массиве, логика не меняется.
   // inverse: true — обратный пункт: выполнен, когда студент НЕ сделал действие.
@@ -2162,6 +2287,28 @@
     b.addEventListener("click", function () { show(b.getAttribute("data-go")); });
   });
 
+  // Блок «Доказательства»: показываются только заполненные числа из EVIDENCE
+  function renderEvidence() {
+    var items = EVIDENCE.items.filter(function (e) { return String(e.value).trim() !== ""; });
+    var grid = $("ev-grid");
+    grid.innerHTML = "";
+    items.forEach(function (e) {
+      var item = el("div", "ev-item");
+      item.appendChild(el("div", "ev-num", String(e.value).trim()));
+      item.appendChild(el("p", "ev-label", e.label));
+      grid.appendChild(item);
+    });
+    $("ev-note").textContent = EVIDENCE.note || "";
+    $("evidence").classList.toggle("hidden", items.length === 0);
+  }
+
+  // Тонкая тень шапки, когда страница прокручена
+  var appbar = document.querySelector(".appbar");
+  window.addEventListener("scroll", function () {
+    appbar.classList.toggle("scrolled", window.scrollY > 4);
+  }, { passive: true });
+
+  renderEvidence();
   $("pat-slot").innerHTML = barSvg("pat-bar");
   $("res-bar-slot").innerHTML = barSvg("res-bar");
   // Последний выбранный сценарий — удобство конкретного зрителя, не обязательное состояние
