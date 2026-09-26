@@ -1,0 +1,2170 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Praxis — симулятор профессиональной практики</title>
+<style>
+  :root {
+    /* PHASE_3_5 A1: фон заметно темнее белых карточек */
+    --paper: #F1EDE4;
+    --card: #FFFFFF;
+    --ink: #1C1F26;
+    --ink-soft: #5A6270;
+    --line: #E0DACE;
+    --brand: #1F4E5F;
+    --brand-soft: #E8F0F2;
+    --pass: #2E7D52;
+    --fail: #B3402F;
+    --warn: #A8681C;
+    /* DESIGN_UPGRADE 2: служебные оттенки для графики */
+    --accent-1: #1F4E5F;
+    --accent-2: #C97B3F;
+    --accent-3: #6B8F71;
+    --accent-4: #8C7A9B;
+    --track: #EDEAE3;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    /* A2: едва заметная точечная фактура, прозрачность не выше .08 */
+    background-color: var(--paper);
+    background-image: radial-gradient(circle at 1px 1px, rgba(31,78,95,.06) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+
+  .wrap { max-width: 760px; margin: 0 auto; padding: 48px 16px; }
+  .wrap-x { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+
+  /* A3: постоянная шапка на всех экранах */
+  .appbar {
+    position: sticky; top: 0; z-index: 10;
+    height: 56px;
+    background: var(--card); border-bottom: 1px solid var(--line);
+  }
+  .appbar-in {
+    max-width: 1040px; height: 100%; margin: 0 auto; padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  }
+  .appbar-brand { display: flex; align-items: baseline; gap: 12px; min-width: 0; white-space: nowrap; }
+  .appbar-brand b { font-size: 15px; font-weight: 600; }
+  .appbar-right { display: flex; align-items: center; gap: 24px; }
+  .hdr-rank { white-space: nowrap; }
+  .hdr-dialog { display: none; }
+  body.in-dialog .hdr-dialog { display: flex; }
+  body.in-dialog .hdr-rank { padding-left: 24px; border-left: 1px solid var(--line); }
+  .hdr-pat { align-items: center; gap: 8px; }
+  .hdr-pat .caption { white-space: nowrap; }
+
+  /* Табличные цифры: метрики не дёргаются при смене значений */
+  .progress, .pat-delta, .res-pat-num, .ring-num, .ring-pct, .chart text, .timer-num,
+  .legend .v, .profile-row .v, .items-group .caption { font-variant-numeric: tabular-nums; }
+
+  /* Типографика */
+  h1 { font-size: 26px; font-weight: 600; line-height: 1.25; margin: 0 0 8px; }
+  h2 { font-size: 18px; font-weight: 600; line-height: 1.35; margin: 0 0 8px; }
+  h3 { font-size: 16px; font-weight: 600; line-height: 1.4; margin: 0 0 4px; }
+  p { margin: 0 0 16px; max-width: 680px; }
+  .caption { font-size: 13px; line-height: 1.4; color: var(--ink-soft); }
+  .eyebrow {
+    font-size: 13px; line-height: 1.4; font-weight: 600;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-soft); margin: 0 0 8px;
+  }
+
+  /* Экраны */
+  .screen { animation: fadeIn 200ms ease-out; }
+  .hidden { display: none !important; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* Карточка */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    padding: 24px;
+  }
+  .card + .card { margin-top: 16px; }
+
+  /* Кнопки */
+  .btn {
+    font: inherit;
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 12px 22px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background-color 150ms, border-color 150ms;
+  }
+  .btn-primary { background: var(--brand); color: #fff; border-color: transparent; }
+  .btn-primary:hover:not(:disabled) { opacity: .9; }
+  .btn-secondary { background: var(--card); color: var(--brand); border-color: var(--brand); }
+  .btn-secondary:hover:not(:disabled) { background: var(--brand-soft); }
+  .btn-tertiary { background: transparent; color: var(--ink-soft); }
+  .btn-tertiary:hover:not(:disabled) { color: var(--ink); }
+  .btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--brand-soft), 0 0 0 4px var(--brand); }
+  .btn:disabled, .input:disabled { opacity: .45; cursor: not-allowed; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+
+  /* Поле ввода */
+  .input {
+    width: 100%;
+    font: inherit;
+    color: var(--ink);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 16px;
+    transition: border-color 150ms, box-shadow 150ms;
+  }
+  .input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+
+  /* ---------- 1. Главная ---------- */
+  .hero h1 { font-size: 38px; line-height: 1.15; letter-spacing: -.01em; margin: 0 0 16px; }
+  .hero-sub { font-size: 17px; color: var(--ink-soft); }
+  .hero .actions { margin-top: 32px; }
+  .hero-note { margin-top: 12px; }
+
+  .block { margin-top: 56px; }
+  .block-title { font-size: 22px; line-height: 1.3; margin: 0 0 24px; }
+
+  /* A5: полосы на главной — белые и песочные через одну, между блоками 64px */
+  .band { padding: 64px 0; }
+  .band-card { background: var(--card); border-bottom: 1px solid var(--line); }
+  .band-card .rank-plate { background: var(--paper); }
+  .band-foot { padding: 24px 0 48px; }
+
+  /* PHASE_3_5 B1: выбор сценария — две карточки в ряд, выбранная с границей --brand */
+  .pick-title { margin-top: 24px; }
+  .sc-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .sc-card {
+    font: inherit; color: inherit; text-align: left; cursor: pointer;
+    display: flex; flex-direction: column; align-items: flex-start;
+    padding: 20px 24px; background: var(--paper);
+    transition: border-color 150ms, box-shadow 150ms, background-color 150ms;
+  }
+  .sc-card + .sc-card { margin-top: 0; }
+  .sc-card:hover { border-color: var(--brand); }
+  .sc-card.selected { background: var(--card); border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand); }
+  .sc-card:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--brand-soft), 0 0 0 4px var(--brand); }
+  .sc-card .badge { margin-bottom: 12px; }
+  .sc-card h3 { font-size: 17px; margin-bottom: 4px; }
+  .sc-blurb { font-size: 14px; line-height: 1.5; color: var(--ink-soft); margin: 0 0 12px; }
+  .sc-card .caption { margin-top: auto; }
+
+  /* PHASE_3_5 B5: плашка об учебном характере симуляции */
+  .disclaimer {
+    background: var(--brand-soft); color: var(--ink);
+    font-size: 13px; line-height: 1.45;
+    padding: 10px 16px; border-radius: 10px; margin: 8px 0 0;
+  }
+  .inverse-note { margin: 4px 0 0; }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .steps .card + .card { margin-top: 0; }
+  .step-num { font-size: 32px; font-weight: 700; line-height: 1; color: var(--track); margin-bottom: 16px; }
+  .step p { font-size: 14px; line-height: 1.5; color: var(--ink-soft); margin: 0; }
+
+  .cmp { display: grid; grid-template-columns: 1fr 1fr; column-gap: 8px; }
+  .cmp > div { padding: 12px 24px; font-size: 15px; line-height: 1.5; }
+  .cmp .l { background: var(--track); }
+  .cmp .r { background: var(--brand-soft); border-left: 3px solid var(--brand); }
+  .cmp .head { padding-top: 20px; font-weight: 600; }
+  .cmp .r.head { color: var(--brand); }
+  .cmp .last { padding-bottom: 20px; }
+  .cmp .l.head { border-radius: 14px 14px 0 0; }
+  .cmp .r.head { border-radius: 0 14px 0 0; }
+  .cmp .l.last { border-radius: 0 0 14px 14px; }
+  .cmp .r.last { border-radius: 0 0 14px 0; }
+  .cmp .quote { font-style: italic; }
+
+  .audience { font-size: 17px; }
+
+  .footer { margin: 0; }
+
+  /* ---------- 2. Сценарий ---------- */
+  .badge {
+    display: inline-block;
+    background: var(--brand-soft); color: var(--brand);
+    font-size: 13px; line-height: 1.4; font-weight: 600;
+    padding: 4px 12px; border-radius: 10px; margin-bottom: 16px;
+  }
+  .setting {
+    background: var(--paper);
+    border-left: 3px solid var(--accent-2);
+    border-radius: 0 10px 10px 0;
+    padding: 16px 24px;
+    margin-bottom: 24px;
+  }
+  .setting p:last-child, .task p:last-child { margin-bottom: 0; }
+  .groups { display: grid; grid-template-columns: 1fr 1fr; gap: 24px 32px; margin-top: 16px; }
+  .group-name { display: flex; align-items: center; gap: 8px; }
+  .group-name .eyebrow { margin: 0; }
+  .cdot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .group ul { list-style: none; margin: 8px 0 0; padding: 0; }
+  .group li { position: relative; padding: 4px 0 4px 24px; }
+  .group li::before {
+    content: ""; position: absolute; left: 0; top: 10px;
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 1.5px solid var(--ink-soft); opacity: .5;
+  }
+  .meta { margin-top: 24px; margin-bottom: 0; }
+
+  /* ---------- 3. Диалог ---------- */
+  /* A4: колонка на всю высоту — лента прокручивается внутри, ввод прижат к низу */
+  .chat-screen { display: flex; flex-direction: column; height: calc(100vh - 56px); height: calc(100dvh - 56px); }
+  .chat-top { flex: 0 0 auto; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .chat-top .wrap-x { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .chat-top h2 { font-size: 15px; margin: 0; }
+  .chat-messages { flex: 1; min-height: 0; overflow-y: auto; }
+  .chat-input { flex: 0 0 auto; background: var(--card); border-top: 1px solid var(--line); padding: 16px 0; }
+
+  .progress { align-items: center; gap: 6px; flex: none; }
+  .pdot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--card); }
+  .pdot.done { background: var(--brand); border-color: var(--brand); }
+  .progress .caption { margin-left: 8px; }
+
+  /* Лента растёт снизу вверх: реплики прижаты к полю ввода */
+  .msgs { min-height: 100%; display: flex; flex-direction: column; justify-content: flex-end; gap: 16px; padding-top: 24px; padding-bottom: 24px; }
+  .msg { max-width: 78%; animation: msgIn 180ms ease-out; }
+  @keyframes msgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .msg-label {
+    font-size: 11px; line-height: 1.4; font-weight: 600;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-soft); margin-bottom: 4px;
+  }
+  .msg-text {
+    font-size: 17px; line-height: 1.5;
+    padding: 12px 16px; border-radius: 14px;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .msg-guest { align-self: flex-start; }
+  .msg-guest .msg-text {
+    background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--accent-2);
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+  }
+  .msg-student { align-self: flex-end; }
+  .msg-student .msg-label { text-align: right; }
+  .msg-student .msg-text { background: var(--brand); color: #fff; }
+
+  .typing { display: inline-flex; gap: 5px; padding: 18px 20px; }
+  .typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-soft); animation: wave 1.2s infinite ease-in-out; }
+  .typing span:nth-child(2) { animation-delay: .15s; }
+  .typing span:nth-child(3) { animation-delay: .3s; }
+  @keyframes wave {
+    0%, 60%, 100% { transform: translateY(0); opacity: .35; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  .msg-error { align-self: stretch; color: var(--fail); font-size: 14px; line-height: 1.5; }
+  .msg-error .btn { margin-top: 8px; }
+
+  .chat-input textarea { display: block; font-size: 17px; line-height: 1.45; padding: 10px 14px; resize: none; }
+  .composer-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 12px; flex-wrap: wrap; }
+  .composer-row .actions { margin-top: 0; }
+  .limit-note { color: var(--ink); font-weight: 600; }
+
+  /* ---------- Геймификация (GAMIFICATION.md) ---------- */
+  .rank-plate {
+    display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px;
+    margin-top: 16px; padding: 8px 16px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  }
+  .rank-plate b { font-weight: 600; }
+
+  .toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; }
+  .toggle input { width: 18px; height: 18px; margin: 0; accent-color: var(--brand); cursor: pointer; }
+  .toggle-wrap { margin-top: 16px; }
+  .toggle-wrap .caption { margin: 4px 0 0 26px; }
+
+  .pat-bar { display: block; }
+  .pat-bar .fill { fill: var(--accent-3); transform-box: fill-box; transform-origin: left center; transition: transform 400ms ease-out; }
+  .pat-bar.nudge { animation: nudge 300ms ease-in-out; }
+  @keyframes nudge { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+  .pat-delta { font-size: 13px; font-weight: 600; min-width: 28px; opacity: 0; transition: opacity 200ms; }
+  .pat-delta.show { opacity: 1; }
+  .pat-word { color: var(--ink); font-weight: 600; min-width: 76px; }
+
+  .composer-row .actions { gap: 16px; align-items: center; }
+  /* Таймер — отдельное тонкое кольцо рядом с «Отправить» (A6: у кнопки нет второй обводки) */
+  .timer { position: relative; width: 32px; height: 32px; flex: none; }
+  .timer svg { position: absolute; inset: 0; }
+  .timer .t-track { fill: none; stroke: var(--track); stroke-width: 3; }
+  .timer .t-arc { fill: none; stroke: var(--brand); stroke-width: 3; stroke-linecap: round; transition: stroke 200ms, stroke-dashoffset 100ms linear; }
+  .timer.urgent .t-arc { stroke: var(--fail); }
+  .timer-num {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: var(--fail); font-size: 12px; font-weight: 600;
+  }
+
+  .msg-student.pause .msg-text { background: var(--track); color: var(--ink-soft); font-style: italic; }
+  .sys-note { align-self: center; color: var(--fail); font-size: 14px; font-weight: 600; animation: msgIn 180ms ease-out; }
+
+  .outcome { font-size: 22px; font-weight: 600; line-height: 1.3; margin: 0 0 24px; }
+  .res-top { display: flex; flex-wrap: wrap; align-items: center; gap: 24px 32px; }
+  .res-pat { flex: none; border-left: 1px solid var(--line); padding-left: 24px; }
+  .res-pat-num { font-size: 26px; font-weight: 600; line-height: 1.2; margin: 4px 0 8px; }
+  .plate { background: var(--brand-soft); color: var(--brand); font-weight: 600; border-radius: 10px; padding: 12px 16px; margin-top: 16px; }
+
+  .badges { display: flex; flex-wrap: wrap; gap: 16px 8px; margin-top: 16px; }
+  .bdg { width: 104px; text-align: center; }
+  .bdg svg { display: block; margin: 0 auto 8px; }
+  .bdg .lbl { font-size: 11px; line-height: 1.3; color: var(--ink-soft); }
+  .bdg.off svg { color: var(--track); }
+  .bdg.off .lbl { opacity: .7; }
+  .bdg.on .lbl { color: var(--ink); font-weight: 600; }
+  .bdg.on svg { animation: pop 250ms ease-out both; }
+  @keyframes pop { from { transform: scale(.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  /* ---------- 4. Анализ (DESIGN_UPGRADE 5) ---------- */
+  .an-group + .an-group { margin-top: 24px; }
+  .an-step { opacity: 0; transform: translateY(4px); transition: opacity 250ms ease-out, transform 250ms ease-out; }
+  .an-step.in { opacity: 1; transform: none; }
+  .an-group .group-name { margin-bottom: 4px; }
+  .an-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 6px 0; }
+  .an-bar { flex: none; width: 120px; height: 4px; border-radius: 2px; background: var(--track); overflow: hidden; }
+  .an-bar i { display: block; height: 100%; width: 0; background: var(--brand); transition: width 300ms ease-out, background-color 300ms; }
+  .an-row.in .an-bar i { width: 100%; }
+  .an-row.pass .an-bar i { background: var(--pass); }
+  .an-row.fail .an-bar i { background: var(--fail); }
+  .err-text { color: var(--fail); font-size: 14px; }
+
+  /* ---------- 5. Результат (DESIGN_UPGRADE 7) ---------- */
+  #res-ring { flex: none; }
+  .ring-arc { transition: stroke-dashoffset 800ms ease-out; }
+  .ring-num { font-size: 30px; font-weight: 600; fill: var(--ink); }
+  .ring-pct { font-size: 13px; font-weight: 600; }
+  .legend { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 200px; }
+  .legend li { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 15px; }
+  .legend .v, .profile-row .v { margin-left: auto; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+
+  .profile-row { display: grid; grid-template-columns: 240px 1fr 36px; align-items: center; gap: 16px; padding: 6px 0; }
+  .profile-row .growth { margin-left: 8px; }
+  .profile-row.weak .pname { font-weight: 600; }
+  .pbar { height: 10px; border-radius: 5px; background: var(--track); overflow: hidden; }
+  .pbar i { display: block; height: 100%; width: 0; border-radius: 5px; transition: width 600ms ease-out; }
+  .badges-wrap { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--line); }
+  .badges-wrap .badges { margin-top: 8px; }
+
+  .conclusion {
+    margin-top: 16px; padding: 20px 24px; border-radius: 14px;
+    background: var(--brand-soft); color: var(--brand);
+    font-size: 18px; font-weight: 600; line-height: 1.45;
+  }
+  .res-summary { margin: 12px 0 0; }
+
+  .items-group { margin-top: 32px; }
+  .items-group > .group-name { margin-bottom: 12px; }
+  .items-group > .group-name .caption { margin-left: auto; }
+  .item { border-left-width: 4px; }
+  .item.pass { border-left-color: var(--pass); }
+  .item.fail { border-left-color: var(--fail); }
+  .item-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+  .item-head h3 { font-size: 18px; margin: 0; }
+  .status { flex: none; font-size: 13px; font-weight: 600; }
+  .item.pass .status { color: var(--pass); }
+  .item.fail .status { color: var(--fail); }
+  .item .quote {
+    margin: 16px 0 0; padding: 14px 20px;
+    background: var(--brand-soft); border-left: 3px solid var(--brand); border-radius: 0 10px 10px 0;
+    font-size: 17px; line-height: 1.5; font-style: italic; color: var(--ink);
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .warn-badge {
+    display: inline-block; margin-top: 8px; padding: 2px 10px; border-radius: 10px;
+    background: var(--warn); color: #fff; font-size: 12px; font-weight: 600;
+  }
+  .noquote { margin: 12px 0 0; }
+  .feedback { margin: 12px 0 0; font-size: 15px; color: var(--ink-soft); }
+
+  .chart-legend { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 8px 0 16px; }
+  .chart-legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .chart svg { display: block; width: 100%; height: auto; }
+  .chart .grid { stroke: var(--line); stroke-width: 1; }
+  .chart text { font-size: 12px; fill: var(--ink-soft); }
+  .chart .score { fill: none; stroke: var(--brand); stroke-width: 2.5; stroke-linejoin: round; }
+  .chart .pat { fill: none; stroke: var(--accent-2); stroke-width: 2; stroke-dasharray: 6 5; }
+  .chart .dot-s { fill: var(--brand); }
+  .chart .dot-s.cur { stroke: var(--card); stroke-width: 2; }
+  .chart .dot-p { fill: var(--accent-2); }
+
+  .transcript summary { cursor: pointer; font-weight: 600; }
+  .transcript #res-lines { margin-top: 16px; }
+  .tline { margin: 0 0 8px; max-width: none; }
+
+  @media (max-width: 640px) {
+    .profile-row { grid-template-columns: 1fr 80px 36px; }
+    .res-pat { border-left: 0; padding-left: 0; }
+    .hero h1 { font-size: 30px; }
+    .steps, .groups, .sc-cards { grid-template-columns: 1fr; }
+    .cmp > div { padding-left: 16px; padding-right: 16px; }
+  }
+  /* Анимации — только в помощь пониманию; при системной настройке «меньше движения» — выключены */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important;
+      transition-delay: 0ms !important;
+      scroll-behavior: auto !important;
+    }
+    .bdg.on svg { animation-delay: 0ms !important; }
+  }
+
+  @media (max-width: 860px) {
+    .appbar-in { padding: 0 16px; gap: 16px; }
+    .appbar-right { gap: 16px; }
+    .hdr-pat-label, .appbar-brand .caption { display: none; }
+    body.in-dialog .hdr-rank { display: none; }
+  }
+</style>
+</head>
+<body>
+<header class="appbar">
+  <div class="appbar-in">
+    <div class="appbar-brand">
+      <b>Praxis</b>
+      <span class="caption" id="hdr-spec"></span>
+    </div>
+    <div class="appbar-right">
+      <div class="hdr-pat hdr-dialog">
+        <span class="caption hdr-pat-label" id="hdr-pat-label"></span>
+        <span id="pat-slot"></span>
+        <span class="caption pat-word" id="pat-word"></span>
+        <span class="pat-delta" id="pat-delta"></span>
+      </div>
+      <div class="progress hdr-dialog">
+        <div id="dlg-dots" style="display: flex; gap: 6px;"></div>
+        <span class="caption" id="dlg-count"></span>
+      </div>
+      <span class="caption hdr-rank" id="hdr-rank"></span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- 1. Главная: белые и песочные полосы через одну -->
+  <section id="screen-start" class="screen">
+    <div class="band band-card">
+      <div class="wrap-x hero">
+        <p class="eyebrow">Симулятор профессиональной практики</p>
+        <h1>Отработайте сложную ситуацию до того, как встретите её на практике</h1>
+        <p class="hero-sub">Вы ведёте диалог с клиентом или пациентом. Потом получаете разбор по профессиональному чек-листу — с цитатами из ваших же реплик.</p>
+        <p class="eyebrow pick-title">Выберите ситуацию</p>
+        <div class="sc-cards" id="sc-cards"></div>
+        <div class="actions">
+          <button class="btn btn-primary" id="btn-start">Начать симуляцию</button>
+          <button class="btn btn-secondary" id="btn-demo" title="Demo-режим: готовый разбор, работает без сети">Посмотреть пример разбора</button>
+        </div>
+        <p class="caption hero-note">Занимает 5–7 минут. Регистрация не нужна.</p>
+        <div class="rank-plate">
+          <span>Ваш ранг: <b id="rank-name"></b></span>
+          <span class="caption" id="rank-next"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="band">
+      <div class="wrap-x">
+        <p class="eyebrow">Как это работает</p>
+        <h2 class="block-title">Три шага от ситуации до разбора</h2>
+        <div class="steps">
+          <div class="card step">
+            <div class="step-num">01</div>
+            <h3>Получаете ситуацию</h3>
+            <p>Реальный случай с практики и чек-лист, по которому вас оценят</p>
+          </div>
+          <div class="card step">
+            <div class="step-num">02</div>
+            <h3>Ведёте диалог</h3>
+            <p>Клиент реагирует на то, что вы говорите, а не по сценарию</p>
+          </div>
+          <div class="card step">
+            <div class="step-num">03</div>
+            <h3>Видите разбор</h3>
+            <p>Каждый вывод подкреплён дословной цитатой из вашей реплики</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="band band-card">
+      <div class="wrap-x">
+        <p class="eyebrow">Отличие</p>
+        <h2 class="block-title">Чем отличается от обычного чата</h2>
+        <div class="cmp">
+          <div class="l head">Обычный ИИ-чат</div>
+          <div class="r head">Этот симулятор</div>
+          <div class="l">Отвечает на вопросы</div>
+          <div class="r">Играет клиента, который реагирует на ваше поведение</div>
+          <div class="l">Даёт общий отзыв в свободной форме</div>
+          <div class="r">Оценивает по профессиональному чек-листу</div>
+          <div class="l last quote">«В целом неплохо, будьте вежливее»</div>
+          <div class="r last quote">«Пункт «извинился» не выполнен — вот ваша реплика»</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="band">
+      <div class="wrap-x">
+        <p class="eyebrow">Для кого</p>
+        <h2 class="block-title">Студентам и преподавателям колледжей</h2>
+        <p class="audience">Студенты гостиничного и сестринского дела, сервиса и продаж отрабатывают трудные разговоры до практики — один движок, свой профессиональный стандарт для каждой специальности. Преподаватель получает расшифровку и заполненный чек-лист.</p>
+      </div>
+    </div>
+
+    <div class="band-foot">
+      <div class="wrap-x"><p class="caption footer">Praxis · VentureHack 2026 · Трек 2 — EduTech</p></div>
+    </div>
+  </section>
+
+  <!-- 2. Сценарий -->
+  <section id="screen-scenario" class="screen hidden">
+   <div class="wrap">
+    <span class="badge" id="sc-badge"></span>
+    <h1 id="sc-title"></h1>
+    <p class="disclaimer hidden" id="sc-disclaimer"></p>
+    <div class="card" style="margin-top: 24px;">
+      <div class="setting">
+        <p class="eyebrow">Обстановка</p>
+        <p id="sc-situation"></p>
+      </div>
+      <div class="task">
+        <h3>Ваша задача</h3>
+        <p id="sc-task"></p>
+      </div>
+    </div>
+    <div class="card">
+      <h2>По чему вас оценят</h2>
+      <p class="caption" style="margin: 0;">Разбор после диалога пройдёт по этим пунктам.</p>
+      <div class="groups" id="sc-groups"></div>
+    </div>
+    <p class="caption meta" id="sc-meta"></p>
+    <div class="toggle-wrap">
+      <label class="toggle"><input type="checkbox" id="opt-timer" checked> Режим с таймером</label>
+      <p class="caption" id="timer-note"></p>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-dialog">Начать диалог</button>
+      <button class="btn btn-tertiary" data-go="start">Назад</button>
+    </div>
+   </div>
+  </section>
+
+  <!-- 3. Диалог: колонка на всю высоту, шкала терпения и точки — в шапке -->
+  <section id="screen-dialog" class="screen chat-screen hidden">
+    <div class="chat-top">
+      <div class="wrap-x">
+        <h2 id="dlg-title"></h2>
+        <span class="caption" id="dlg-role"></span>
+      </div>
+    </div>
+
+    <div class="chat-messages" id="chat-scroll">
+      <div class="wrap-x msgs" id="msgs"></div>
+    </div>
+
+    <div class="chat-input">
+      <div class="wrap-x">
+        <textarea class="input" id="dlg-input" rows="3" placeholder="Ваша реплика гостю…"></textarea>
+        <div class="composer-row">
+          <span class="caption" id="dlg-hint">Ctrl+Enter — отправить</span>
+          <div class="actions">
+            <button class="btn btn-secondary" id="btn-finish">Завершить</button>
+            <span class="timer hidden" id="timer" aria-hidden="true">
+              <svg width="32" height="32" viewBox="0 0 32 32">
+                <circle class="t-track" cx="16" cy="16" r="13"/>
+                <circle class="t-arc" id="timer-arc" cx="16" cy="16" r="13" transform="rotate(-90 16 16)"/>
+              </svg>
+              <span class="timer-num" id="timer-num"></span>
+            </span>
+            <button class="btn btn-primary" id="btn-send">Отправить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Анализ -->
+  <section id="screen-analysis" class="screen hidden">
+   <div class="wrap">
+    <p class="eyebrow">Анализ</p>
+    <h1>Сверяю ваши реплики с чек-листом</h1>
+    <div class="card" style="margin-top: 24px;"><div id="an-list"></div></div>
+    <p class="caption" id="an-note" style="margin-top: 16px;"></p>
+    <div class="card hidden" id="an-error" style="margin-top: 16px;">
+      <h2>Не удалось получить оценку</h2>
+      <p class="err-text" id="an-error-text"></p>
+      <div class="actions">
+        <button class="btn btn-primary" id="btn-reassess">Повторить оценку</button>
+        <button class="btn btn-secondary" id="btn-an-demo">Показать пример разбора</button>
+        <button class="btn btn-tertiary" data-go="scenario">Пройти заново</button>
+      </div>
+    </div>
+   </div>
+  </section>
+
+  <!-- 5. Результат -->
+  <section id="screen-result" class="screen hidden">
+   <div class="wrap">
+    <p class="eyebrow">Результат</p>
+    <p class="disclaimer hidden" id="res-demo" style="margin: 0 0 16px;">Demo-режим: пример разбора, записанный заранее. Работает без сети и не попадает в вашу статистику.</p>
+    <p class="outcome" id="res-outcome"></p>
+    <div class="card res-top">
+      <div id="res-ring"></div>
+      <ul class="legend" id="res-legend"></ul>
+      <div class="res-pat">
+        <div class="caption" id="res-pat-label"></div>
+        <div class="res-pat-num" id="res-pat-num"></div>
+        <span id="res-bar-slot"></span>
+      </div>
+    </div>
+    <div class="plate hidden" id="res-rank"></div>
+
+    <div class="card" style="margin-top: 16px;">
+      <h2>Профиль компетенций</h2>
+      <div id="res-profile" style="margin-top: 16px;"></div>
+      <div class="badges-wrap">
+        <p class="eyebrow">Значки</p>
+        <div class="badges" id="res-badges"></div>
+      </div>
+    </div>
+
+    <div class="conclusion" id="res-conclusion"></div>
+    <p class="caption res-summary" id="res-summary"></p>
+
+    <div class="block" style="margin-top: 48px;">
+      <p class="eyebrow">Разбор по пунктам</p>
+      <h2 class="block-title" style="margin-bottom: 8px;">Что сделано и чего не хватило</h2>
+      <p class="caption" style="margin: 0;">Цитаты — дословно из ваших реплик. Невыполненные пункты — первыми.</p>
+      <div id="res-items"></div>
+    </div>
+
+    <div class="card hidden" id="res-dyn" style="margin-top: 32px;">
+      <h2>Динамика по попыткам</h2>
+      <div class="chart-legend caption">
+        <span><svg width="24" height="8" aria-hidden="true"><line x1="0" y1="4" x2="24" y2="4" style="stroke: var(--brand); stroke-width: 2.5"/></svg> Результат из 8</span>
+        <span><svg width="24" height="8" aria-hidden="true"><line x1="0" y1="4" x2="24" y2="4" style="stroke: var(--accent-2); stroke-width: 2; stroke-dasharray: 6 5"/></svg> <span id="chart-pat-label"></span></span>
+      </div>
+      <div class="chart" id="res-chart"></div>
+      <p class="caption" id="res-dyn-caption" style="margin: 8px 0 0;"></p>
+    </div>
+
+    <details class="card transcript" id="res-transcript" style="margin-top: 16px;">
+      <summary>Расшифровка диалога</summary>
+      <div id="res-lines"></div>
+    </details>
+
+    <div class="actions">
+      <button class="btn btn-primary" data-go="scenario">Пройти заново</button>
+      <button class="btn btn-secondary" id="btn-csv">Скачать CSV</button>
+      <button class="btn btn-tertiary" data-go="start">На старт</button>
+    </div>
+   </div>
+  </section>
+
+</main>
+
+<script>
+  // ================= СЦЕНАРИИ =================
+  // Новый сценарий — новый объект в массиве, логика не меняется.
+  // inverse: true — обратный пункт: выполнен, когда студент НЕ сделал действие.
+  var SCENARIOS = [
+    {
+      id: "hotel",
+      title: "Заселение: бронь не найдена",
+      specialty: "Гостиничное дело · 2 курс",
+      blurb: "Гость после шестичасового перелёта, а его брони нет в системе.",
+      role: "администратор стойки регистрации",
+      duration: "около 5 минут",
+      situation: "Пятница, 22:10. Городской отель на 120 номеров загружен на 95%. К стойке подходит гость с чемоданом — он только что прилетел после шестичасового перелёта. Ваш коллега уже проверил систему, сказал гостю, что брони нет, и ушёл на перерыв. Гость ждёт ответа от вас.",
+      task: "Разберитесь в ситуации и решите вопрос с заселением. В вашем распоряжении: свободен один номер «Стандарт» с видом во двор и один «Полулюкс»; у отеля есть партнёрский отель в 10 минутах езды. Решения о компенсации в пределах смены вы принимаете сами.",
+      disclaimer: "",
+      firstMessage: "Добрый вечер. У меня бронь, вот подтверждение. Только что мне сказали, что её нет в системе. Это как понимать?",
+      maxTurns: 8,
+      // Формы слов для интерфейса и промпта оценки
+      words: {
+        partner: "Гость", partnerGen: "гостя", partnerDat: "гостю", partnerWith: "с гостем",
+        student: "Администратор", studentGen: "администратора"
+      },
+      sceneStart: "(Гость подходит к стойке регистрации.)",
+      pauseText: "[пауза: администратор молчит]",
+      // Уходит собеседник только по решению кода (шкала = 0), поэтому здесь — угроза, а не уход
+      edgePrompt: "Гость на грани ухода. Отвечай резко, одной фразой, пригрози уйти или позвать менеджера. Но пока не уходи и не прощайся: ты всё ещё ждёшь ответа.",
+      // Шкала состояния (GAMIFICATION 1): название и слова уровней — от спокойного к уходу
+      scale: {
+        name: "Терпение гостя", end: "Терпение в конце",
+        levels: ["Спокоен", "Раздражён", "На грани", "Готов уйти"]
+      },
+      outcomes: {
+        good: "Гость остался доволен",
+        mid: "Гость согласился, но с осадком",
+        left: "Гость ушёл на {n}-й реплике",
+        leftNote: "Гость ушёл, не дождавшись решения",
+        leftHint: "Гость ушёл. Открываю разбор…"
+      },
+      ranks: ["Стажёр", "Администратор", "Старший администратор", "Наставник смены"],
+      // Правила шкалы (GAMIFICATION 1.2). Регистр не важен, ё = е.
+      // words — любое слово из списка; question — есть «?»; needQuestion — только вместе с «?»;
+      // digits — есть цифры; excuse — считается отговоркой (значок «Спокойный тон»).
+      patienceRules: [
+        { words: ["извин", "прошу прощения", "сожалею", "простите"], d: 10 },
+        { question: true, d: 6 },
+        { words: ["номер", "htl", "стандарт", "полулюкс", "люкс", "этаж", "трансфер", "партнерск"], digits: true, d: 8 },
+        { words: ["система", "не моя вина", "так бывает", "такое бывает", "обычно", "глюч"], d: -10, excuse: true }
+      ],
+      rolePrompt: [
+        "Ты играешь роль гостя отеля в учебной симуляции. Собеседник — администратор стойки регистрации. Отвечай только репликами гостя.",
+        "",
+        "КТО ТЫ",
+        "Андрей Соколов, 41 год. Только что прилетел после шестичасового перелёта, устал, завтра в 9:00 у тебя важная встреча. Ты раздражён, но не агрессивен: не оскорбляешь, не кричишь, не угрожаешь.",
+        "",
+        "ЧТО ПРОИЗОШЛО",
+        "Три недели назад ты забронировал номер «Стандарт» на сайте отеля и сразу оплатил картой. Подтверждение у тебя в телефоне. Другой сотрудник только что сказал, что брони в системе нет, и ушёл.",
+        "",
+        "СКРЫТЫЕ ДАННЫЕ — называй только если администратор прямо спросит",
+        "- Фамилия: Соколов",
+        "- Номер брони: HTL-48120",
+        "- Срок: две ночи, с сегодняшнего дня",
+        "Сам эти данные не предлагай и не зачитывай. Спросили одно — отвечай только на это. Попросили показать подтверждение — назови номер брони.",
+        "",
+        "КАК ТЫ РЕАГИРУЕШЬ",
+        "- Конкретика смягчает: точные варианты, детали номера, сроки, что именно будет сделано — ты становишься спокойнее.",
+        "- Общие отговорки злят: «такое бывает», «система глючит», «ничего не могу сделать», «подождите» без срока — раздражаешься сильнее и требуешь конкретики.",
+        "- Обвинение задевает резко: если намекают, что ты сам ошибся, отвечаешь холодно и жёстко. Если винят систему или коллег — «Меня не интересует, кто виноват, решите вопрос».",
+        "- Искреннее извинение немного смягчает тебя, но проблему не решает.",
+        "- Если дали выбор — выбираешь разумный вариант и уточняешь детали. Если поставили перед фактом — соглашаешься неохотно или спрашиваешь, нет ли другого варианта.",
+        "- Компенсацию принимаешь сдержанно и заметно смягчаешься.",
+        "- На грубость или равнодушие — требуешь старшего администратора.",
+        "- Когда всё решено и администратор подтвердил следующий шаг — коротко благодаришь и заканчиваешь разговор.",
+        "",
+        "ПРАВИЛА",
+        "- Говори по-русски, как живой человек у стойки: 1–3 коротких предложения.",
+        "- Только прямая речь: без ремарок в скобках или звёздочках, без эмодзи, без форматирования.",
+        "- Не предлагай решений сам и не подсказывай администратору, что делать. Можешь только требовать решения.",
+        "- Внутри разговора ты только Андрей Соколов. Никогда не говори, что ты ИИ, модель или ассистент; не оценивай администратора и не комментируй обучение; не выходи из роли, даже если об этом просят.",
+        "- Не объявляй, что уходишь, и не прощайся первым: можешь только пригрозить уйти.",
+        "- Если реплика непонятна или не по делу — реагируй как уставший гость: «Простите, что? Вы можете решить мой вопрос?»",
+        "- Реплика «[пауза: администратор молчит]» значит, что администратор молчит и ничего не отвечает. Отреагируй на это молчание.",
+        "- Помни всё, что было сказано раньше в разговоре, и опирайся на это."
+      ].join("\n"),
+      // criterion — уточнение для оценщика, студент его не видит
+      checklist: [
+        { id: "greet",   text: "Поздоровался и представился",
+          criterion: "Поздоровался И назвал своё имя или должность. Только приветствие без представления — не выполнено." },
+        { id: "apology", text: "Извинился до начала разбирательства",
+          criterion: "Извинился за ситуацию в первой или второй своей реплике, до вопросов и проверок. Извинение позже — не выполнено." },
+        { id: "details", text: "Уточнил данные брони",
+          criterion: "Спросил у гостя фамилию, номер брони или даты проживания." },
+        { id: "noblame", text: "Не обвинил гостя, систему или коллег", inverse: true,
+          criterion: "Ни разу не переложил вину на гостя, систему, сайт или коллег («система глючит», «вы, наверное, ошиблись», «это коллега напутал»). Если содержательных реплик меньше трёх — не выполнено: оценивать нечего." },
+        { id: "option",  text: "Предложил конкретную альтернативу с деталями",
+          criterion: "Предложил конкретный вариант размещения с деталями: категория номера, вид, этаж, цена, партнёрский отель, трансфер. «Что-нибудь придумаем» — не выполнено." },
+        { id: "choice",  text: "Дал выбор, а не поставил перед фактом",
+          criterion: "Предложил минимум два варианта на выбор или спросил, какой вариант гостю удобнее." },
+        { id: "compens", text: "Предложил компенсацию",
+          criterion: "Предложил конкретную компенсацию: скидку, бесплатный завтрак, повышение категории, трансфер за счёт отеля и т. п." },
+        { id: "close",   text: "Корректно завершил и подтвердил следующий шаг",
+          criterion: "В конце подтвердил, что будет дальше (ключ, номер комнаты, время, кто что сделает) и корректно попрощался или пожелал хорошего отдыха." }
+      ],
+      // DESIGN_UPGRADE 6: группировка пунктов по компетенциям. phrase — для главного вывода.
+      competencies: [
+        { id: "contact",   name: "Установление контакта", phrase: "установление контакта", color: "--accent-1", items: ["greet", "apology"] },
+        { id: "diagnosis", name: "Выяснение ситуации",    phrase: "выяснение ситуации",    color: "--accent-2", items: ["details", "noblame"] },
+        { id: "solution",  name: "Поиск решения",         phrase: "поиск решения",         color: "--accent-3", items: ["option", "choice"] },
+        { id: "closing",   name: "Завершение",            phrase: "завершение разговора",  color: "--accent-4", items: ["compens", "close"] }
+      ]
+    },
+
+    // ---------- PHASE_3_5 B2–B5: медицинский сценарий ----------
+    {
+      id: "clinic",
+      title: "Приём: пациент без записи требует врача",
+      specialty: "Сестринское дело · 2 курс",
+      blurb: "Пациент с болью в груди пришёл без записи и требует врача немедленно.",
+      role: "медсестра приёмного поста",
+      duration: "около 5 минут",
+      situation: "Будний день, 18:40, поликлиника. До конца приёма 20 минут, у кабинета четыре человека по записи. К посту подходит мужчина 54 лет без записи: жалуется на боль в груди, которая появилась днём после физической нагрузки, сейчас притупилась. Требует, чтобы его приняли немедленно.",
+      task: "Вы — медсестра приёмного поста. Нужно оценить ситуацию, расспросить пациента и принять решение о маршрутизации, не нарушая порядок приёма остальных и не отмахнувшись от пациента. Под рукой: дежурный врач-терапевт в кабинете 12, кабинет ЭКГ на первом этаже работает до 19:00, телефон для вызова скорой помощи.",
+      disclaimer: "Учебная симуляция для отработки коммуникации. Не является медицинской рекомендацией и не заменяет клинический алгоритм.",
+      firstMessage: "Девушка, мне надо к врачу сейчас. У меня днём грудь прихватило. Я что, в очереди сидеть должен?",
+      maxTurns: 8,
+      words: {
+        partner: "Пациент", partnerGen: "пациента", partnerDat: "пациенту", partnerWith: "с пациентом",
+        student: "Медсестра", studentGen: "медсестры"
+      },
+      sceneStart: "(Пациент подходит к посту медсестры.)",
+      pauseText: "[пауза: медсестра молчит]",
+      edgePrompt: "Пациент на грани: отвечай резко, одной фразой, пригрози уйти или пожаловаться заведующему. Но пока не уходи и не прощайся: ты всё ещё ждёшь помощи.",
+      scale: {
+        name: "Состояние пациента", end: "Состояние в конце",
+        levels: ["Стабилен", "Встревожен", "Возбуждён", "Уходит, не получив помощи"]
+      },
+      outcomes: {
+        good: "Пациент успокоился и знает, что делать дальше",
+        mid: "Пациент согласился, но остался встревожен",
+        left: "Пациент ушёл, не получив помощи, на {n}-й реплике",
+        leftNote: "Пациент ушёл, не получив помощи",
+        leftHint: "Пациент ушёл. Открываю разбор…"
+      },
+      ranks: ["Стажёр", "Медсестра", "Старшая медсестра", "Наставник отделения"],
+      // PHASE_3_5 B4: плюс — вопросы о симптомах и лекарствах, конкретный шаг, спокойный тон;
+      // минус — «ждите очередь», «это к терапевту», «ничего страшного», попытка диагноза
+      patienceRules: [
+        { words: ["бол", "где", "когда", "давно", "сколько", "характер", "отдает", "отдавал", "рук", "лестниц", "нагрузк", "одышк", "давит", "колет", "жжет"], needQuestion: true, d: 8 },
+        { words: ["лекарств", "таблет", "препарат", "принимаете", "пьете", "давлен", "хроническ", "болеете", "гипертон"], needQuestion: true, d: 8 },
+        { words: ["кабинет", "дежурн", "экг", "кардиограм", "позову", "приглашу", "провожу", "проведу", "вызову", "скорую", "минут", "вне очеред", "без очеред"], d: 8 },
+        { words: ["понимаю", "пожалуйста", "присядьте", "не волнуйтесь", "извин", "давайте"], d: 6 },
+        { words: ["ждите очеред", "ждите своей очеред", "в очеред", "займите очередь", "это к терапевт", "идите к терапевт", "ничего страшного", "запишитесь", "без записи не", "не положено", "не ко мне"], d: -10, excuse: true },
+        { words: ["инфаркт", "стенокард", "это сердце", "это давление", "это остеохондроз", "невралги", "межреберн", "выпейте", "примите таблет", "под язык", "рассосите"], d: -10 }
+      ],
+      rolePrompt: [
+        "Ты играешь роль пациента поликлиники в учебной симуляции. Собеседник — медсестра приёмного поста. Отвечай только репликами пациента.",
+        "",
+        "КТО ТЫ",
+        "Сергей Викторович, 54 года. Раздражён очередью, уверен, что у тебя «что-то серьёзное», настойчив. Не грубишь и не оскорбляешь.",
+        "",
+        "ЧТО ПРОИЗОШЛО",
+        "Будний день, 18:40. Ты пришёл в поликлинику без записи. Днём прихватило в груди, сейчас слабее, но тебе тревожно.",
+        "",
+        "СКРЫТЫЕ ДАННЫЕ — сообщай только при прямом вопросе именно об этом",
+        "- Боль давящая, за грудиной — если спросят, какая боль или где болит.",
+        "- Началась днём, когда поднимался по лестнице, длилась минут двадцать, сейчас слабее — если спросят, когда и при каких обстоятельствах началась или сколько длилась.",
+        "- Отдавала в левую руку — если спросят, отдаёт ли боль куда-нибудь или болит ли ещё где-то.",
+        "- Гипертония, таблетки от давления пьёшь нерегулярно — если спросят про хронические болезни или лекарства.",
+        "Сам про руку, нагрузку и давление не рассказываешь. На общий вопрос «что случилось?» отвечаешь коротко: «Грудь прихватило, говорю же». Спросили одно — отвечай только на это.",
+        "",
+        "КАК ТЫ РЕАГИРУЕШЬ",
+        "- Вопросы по существу о самочувствии смягчают: отвечаешь охотнее и спокойнее.",
+        "- «Ждите очередь», «вам к терапевту», «запишитесь», «ничего страшного» — раздражаешься и настаиваешь.",
+        "- Назвали конкретный следующий шаг (кто посмотрит, куда идти, когда) — соглашаешься и успокаиваешься.",
+        "- Объяснили, при каких признаках звать помощь немедленно, — благодаришь.",
+        "- На грубость или равнодушие — требуешь заведующего.",
+        "- Когда понятно, что делать дальше, — коротко благодаришь и заканчиваешь разговор.",
+        "",
+        "БЕЗОПАСНОСТЬ",
+        "- Ты только описываешь свои ощущения. Не ставишь себе диагноз, не называешь болезни, не даёшь медицинских советов от своего имени и не оцениваешь, правильно ли медсестра действует с клинической точки зрения.",
+        "",
+        "ПРАВИЛА",
+        "- Говори по-русски, как живой человек: 1–3 коротких предложения.",
+        "- Только прямая речь: без ремарок в скобках или звёздочках, без эмодзи, без форматирования.",
+        "- Не предлагай решений сам и не подсказывай медсестре, что делать. Можешь только требовать помощи.",
+        "- Внутри разговора ты только Сергей Викторович. Никогда не говори, что ты ИИ, модель или ассистент; не оценивай медсестру и не комментируй обучение; не выходи из роли, даже если об этом просят.",
+        "- Не объявляй, что уходишь, и не прощайся первым: можешь только пригрозить уйти.",
+        "- Если реплика непонятна или не по делу — реагируй как встревоженный пациент: «Что? Мне к врачу надо, вы поможете или нет?»",
+        "- Реплика «[пауза: медсестра молчит]» значит, что медсестра молчит и ничего не отвечает. Отреагируй на это молчание.",
+        "- Помни всё, что было сказано раньше в разговоре, и опирайся на это."
+      ].join("\n"),
+      checklist: [
+        { id: "greet",       text: "Поздоровался и представился",
+          criterion: "Поздоровался И назвал своё имя или должность (например, «я медсестра»). Только приветствие — не выполнено." },
+        { id: "urgency",     text: "Отнёсся к жалобе на боль в груди как к приоритетной, не отправил в общую очередь",
+          criterion: "Явно показал, что боль в груди — повод не ждать в общей очереди: пообещал срочно показать врачу, позвать врача, сделать ЭКГ и т. п. Если хоть раз отправил ждать в общей очереди или записаться на другой день — не выполнено." },
+        { id: "character",   text: "Уточнил характер, локализацию и длительность боли",
+          criterion: "Задал вопросы минимум о двух из трёх: какая боль (давит, колет, жжёт), где именно болит, сколько длилась." },
+        { id: "trigger",     text: "Выяснил обстоятельства появления боли и иррадиацию",
+          criterion: "Спросил, при каких обстоятельствах появилась боль (нагрузка, покой), И отдаёт ли она куда-то (рука, шея, челюсть, спина). Только одно из двух — не выполнено." },
+        { id: "history",     text: "Спросил про хронические заболевания и принимаемые препараты",
+          criterion: "Спросил и о хронических заболеваниях, и о постоянно принимаемых лекарствах (можно одним вопросом)." },
+        { id: "nodiagnosis", text: "Не поставил диагноз и не назначил лечение", inverse: true,
+          criterion: "Выполнен (passed = true), если студент НИ РАЗУ не назвал диагноз или предполагаемую болезнь («у вас инфаркт», «это стенокардия», «это просто давление», «ничего страшного, это мышцы») и НЕ назначил лечение (выпить или положить под язык таблетку, лекарство, дозу). Вопросы о лекарствах («что вы принимаете?», «есть ли у вас нитроглицерин?») и маршрутизация к врачу — это НЕ нарушение. Нарушение хотя бы в одной реплике — passed = false, quote — фрагмент с нарушением. Если содержательных реплик меньше трёх — не выполнено: оценивать нечего." },
+        { id: "route",       text: "Назвал конкретный следующий шаг: кто, куда и когда",
+          criterion: "Назвал конкретно, кто посмотрит (врач, дежурный терапевт), куда идти (кабинет, ЭКГ) и когда (сейчас, через N минут). «Вам к врачу» без деталей — не выполнено." },
+        { id: "safety",      text: "Предупредил, при каких признаках нужно звать помощь немедленно",
+          criterion: "Назвал конкретные признаки (боль усилилась или вернулась, одышка, холодный пот, слабость, головокружение), при которых нужно сразу позвать медсестру или вызвать скорую." }
+      ],
+      competencies: [
+        { id: "contact",  name: "Контакт и приоритет", phrase: "контакт и приоритет",           color: "--accent-1", items: ["greet", "urgency"] },
+        { id: "info",     name: "Сбор информации",     phrase: "сбор информации",               color: "--accent-2", items: ["character", "trigger"] },
+        { id: "history",  name: "Анамнез и границы",   phrase: "анамнез и границы компетенции", color: "--accent-3", items: ["history", "nodiagnosis"] },
+        { id: "routing",  name: "Маршрутизация",       phrase: "маршрутизация",                 color: "--accent-4", items: ["route", "safety"] }
+      ]
+    }
+  ];
+
+  // Текущий сценарий: весь остальной код читает SCENARIO
+  var SCENARIO = SCENARIOS[0];
+
+  // ================= DEMO-РЕЖИМ (план 3.8) =================
+  // Готовый прогон по каждому сценарию: история + оценка. Рисуется тем же кодом, что и живой
+  // результат, и работает без сети. Перед показом замените на свой лучший реальный прогон:
+  // пройдите его, затем в консоли браузера выполните praxisDemoJson() и вставьте ответ сюда.
+  // prev — прошлые попытки для графика динамики и значка «Рост».
+  var DEMOS = {
+    hotel: {
+      patience: 88, patienceLog: [63, 49, 69, 81, 88], leftAt: null, excuses: 1, replies: 5, fast: false, timer: true,
+      history: [
+        { role: "model", text: "Добрый вечер. У меня бронь, вот подтверждение. Только что мне сказали, что её нет в системе. Это как понимать?" },
+        { role: "user",  text: "Добрый вечер, меня зовут Анна, я администратор. Давайте разберёмся — назовите, пожалуйста, фамилию и номер брони." },
+        { role: "model", text: "Соколов. HTL-48120. Я три недели назад бронировал и сразу оплатил." },
+        { role: "user",  text: "Вижу оплату, а брони нет. Похоже, сайт опять глючит, такое у нас бывает." },
+        { role: "model", text: "Меня не интересует, что у вас глючит. Мне нужен номер, я шесть часов летел." },
+        { role: "user",  text: "Понимаю вас. Могу предложить два варианта: «Стандарт» на третьем этаже с видом во двор, свободен прямо сейчас, или «Полулюкс» на пятом этаже без доплаты. Что вам удобнее?" },
+        { role: "model", text: "Давайте полулюкс. Только чтобы без сюрпризов." },
+        { role: "user",  text: "Хорошо. За неудобство завтрак на оба утра — за наш счёт." },
+        { role: "model", text: "Ладно. Это уже разговор." },
+        { role: "user",  text: "Вот ключ, номер 512, лифт справа. Бронь на две ночи я восстановлю до утра и пришлю подтверждение на почту. Хорошего отдыха, Андрей!" },
+        { role: "model", text: "Спасибо. Спокойной ночи." }
+      ],
+      items: [
+        { id: "greet",   passed: true,  quote: "Добрый вечер, меня зовут Анна, я администратор.",
+          feedback: "Вы поздоровались и сразу назвали имя и должность — гость понимает, с кем говорит." },
+        { id: "apology", passed: false, quote: "Давайте разберёмся — назовите, пожалуйста, фамилию и номер брони.",
+          feedback: "Вы сразу перешли к проверке и не извинились. Следовало сказать: «Приношу извинения за ситуацию, сейчас всё решим»." },
+        { id: "details", passed: true,  quote: "назовите, пожалуйста, фамилию и номер брони",
+          feedback: "Вы уточнили фамилию и номер брони — это позволило найти оплату." },
+        { id: "noblame", passed: false, quote: "Похоже, сайт опять глючит, такое у нас бывает.",
+          feedback: "Вы переложили вину на сайт, и гость разозлился. Лучше: «Я вижу вашу оплату и сейчас решу вопрос с номером»." },
+        { id: "option",  passed: true,  quote: "Могу предложить два варианта: «Стандарт» на третьем этаже с видом во двор, свободен прямо сейчас",
+          feedback: "Вариант конкретный: категория, этаж, вид и доступность." },
+        { id: "choice",  passed: true,  quote: "Что вам удобнее?",
+          feedback: "Вы дали выбор из двух вариантов, а не поставили перед фактом." },
+        { id: "compens", passed: true,  quote: "За неудобство завтрак на оба утра — за наш счёт.",
+          feedback: "Конкретная компенсация заметно смягчила гостя." },
+        { id: "close",   passed: true,  quote: "Бронь на две ночи я восстановлю до утра и пришлю подтверждение на почту.",
+          feedback: "Вы подтвердили следующий шаг и сроки и корректно попрощались." }
+      ],
+      summary: "Решение конкретное, с выбором и компенсацией, но без извинения в начале и с перекладыванием вины на сайт.",
+      prev: [
+        { at: "2026-09-20T10:00:00.000Z", passed: 3, total: 8, patience: 41,
+          items: [{ id: "greet", passed: true }, { id: "details", passed: true }, { id: "option", passed: true }] },
+        { at: "2026-09-22T10:00:00.000Z", passed: 4, total: 8, patience: 58,
+          items: [{ id: "greet", passed: true }, { id: "details", passed: true }, { id: "option", passed: true }, { id: "close", passed: true }] }
+      ]
+    },
+    clinic: {
+      patience: 86, patienceLog: [83, 85, 90, 94, 86], leftAt: null, excuses: 0, replies: 5, fast: false, timer: true,
+      history: [
+        { role: "model", text: "Девушка, мне надо к врачу сейчас. У меня днём грудь прихватило. Я что, в очереди сидеть должен?" },
+        { role: "user",  text: "Здравствуйте, я медсестра Анна. Понимаю, что вы волнуетесь. Скажите, где именно болит и какая боль?" },
+        { role: "model", text: "За грудиной давит. Сейчас уже слабее, но всё равно неприятно." },
+        { role: "user",  text: "Когда это началось и сколько длилось?" },
+        { role: "model", text: "Днём, минут двадцать. Потом отпустило немного." },
+        { role: "user",  text: "Какие у вас хронические заболевания, какие лекарства принимаете?" },
+        { role: "model", text: "Давление бывает высокое. Таблетки пью, но не всегда." },
+        { role: "user",  text: "Хорошо. Ждать в общей очереди не нужно: сейчас провожу вас в кабинет 12 к дежурному терапевту, он примет вас в течение пяти минут." },
+        { role: "model", text: "Ну вот, другое дело. Спасибо." },
+        { role: "user",  text: "Если боль усилится, появится одышка или холодный пот, сразу скажите мне — я вызову скорую." },
+        { role: "model", text: "Понял. Пойдёмте." }
+      ],
+      items: [
+        { id: "greet",       passed: true,  quote: "Здравствуйте, я медсестра Анна.",
+          feedback: "Вы поздоровались и представились — пациент понимает, к кому обращается." },
+        { id: "urgency",     passed: true,  quote: "Ждать в общей очереди не нужно: сейчас провожу вас в кабинет 12 к дежурному терапевту",
+          feedback: "Вы не отправили пациента с болью в груди в общую очередь." },
+        { id: "character",   passed: true,  quote: "Скажите, где именно болит и какая боль?",
+          feedback: "Вы уточнили локализацию и характер боли." },
+        { id: "trigger",     passed: false, quote: "Когда это началось и сколько длилось?",
+          feedback: "Вы спросили о времени, но не об обстоятельствах и не о том, отдаёт ли боль куда-то. Следовало спросить: «Что вы делали, когда заболело? Отдаёт ли боль в руку, шею или челюсть?»" },
+        { id: "history",     passed: true,  quote: "Какие у вас хронические заболевания, какие лекарства принимаете?",
+          feedback: "Одним вопросом вы выяснили и хронические болезни, и лекарства." },
+        { id: "nodiagnosis", passed: true,  quote: "",
+          feedback: "Вы не называли диагноз и не советовали лекарства — только расспросили и направили к врачу." },
+        { id: "route",       passed: true,  quote: "сейчас провожу вас в кабинет 12 к дежурному терапевту, он примет вас в течение пяти минут",
+          feedback: "Конкретно: кто, куда и когда." },
+        { id: "safety",      passed: true,  quote: "Если боль усилится, появится одышка или холодный пот, сразу скажите мне — я вызову скорую.",
+          feedback: "Вы назвали признаки, при которых нужна немедленная помощь." }
+      ],
+      summary: "Грамотная маршрутизация без выхода за границы компетенции; не выяснена иррадиация боли — важный «красный флаг».",
+      prev: [
+        { at: "2026-09-20T10:00:00.000Z", passed: 3, total: 8, patience: 38,
+          items: [{ id: "greet", passed: true }, { id: "character", passed: true }, { id: "nodiagnosis", passed: true }] },
+        { at: "2026-09-22T10:00:00.000Z", passed: 5, total: 8, patience: 62,
+          items: [{ id: "greet", passed: true }, { id: "character", passed: true }, { id: "history", passed: true }, { id: "nodiagnosis", passed: true }, { id: "route", passed: true }] }
+      ]
+    }
+  };
+
+  // ================= ГЕЙМИФИКАЦИЯ: НАСТРОЙКИ =================
+  // Общая механика шкалы (GAMIFICATION 1.2); слова и правила — в SCENARIO.patienceRules
+  var PATIENCE = {
+    start: 70,
+    fastSec: 20, limitSec: 45, fastBadgeSec: 25, shortLen: 15,
+    dFast: 3, dTimeout: -12, dShort: -8, dDecay: -4,
+    edge: 25
+  };
+
+  // Имена рангов — в SCENARIO.ranks, здесь пороги-подсказки
+  var RANKS = [
+    { next: "наберите 4 из 8" },
+    { next: "наберите 6 из 8" },
+    { next: "наберите 8 из 8 при шкале состояния от 70%" },
+    { next: "" }
+  ];
+
+  // Ровно пять значков, геометрия 40×40, обводка без заливки
+  var BADGES = [
+    { id: "calm",     name: "Спокойный тон",   hint: "Ни одной отговорки за диалог",   color: "--accent-2",
+      shape: '<circle cx="20" cy="20" r="17"/>' },
+    { id: "retained", name: "Удержал клиента", hint: "Шкала состояния в конце от 85%", color: "--accent-4",
+      shape: '<circle cx="20" cy="20" r="17"/><circle cx="20" cy="20" r="4" fill="currentColor" stroke="none"/>' },
+    { id: "clean",    name: "Чистая работа",   hint: "8 из 8 по чек-листу",            color: "--accent-1",
+      shape: '<polygon points="20,2 35.6,11 35.6,29 20,38 4.4,29 4.4,11"/>' },
+    { id: "fast",     name: "Быстрая реакция", hint: "Все ответы быстрее 25 секунд",   color: "--accent-3",
+      shape: '<polygon points="20,2 38,20 20,38 2,20"/>' },
+    { id: "growth",   name: "Рост",            hint: "Результат выше прошлой попытки", color: "--accent-1",
+      shape: '<polygon points="20,3 37,35 3,35"/>' }
+  ];
+
+  // Сессии и прогресс — раздельно по scenario.id
+  var STORE_PREFIX = "praxis.sessions.";
+  var PICK_KEY = "praxis.scenario";
+
+  // ================= НАВИГАЦИЯ =================
+  var SCREENS = ["start", "scenario", "dialog", "analysis", "result"];
+
+  function $(id) { return document.getElementById(id); }
+
+  function show(name) {
+    SCREENS.forEach(function (s) {
+      $("screen-" + s).classList.toggle("hidden", s !== name);
+    });
+    // На экране диалога шапка показывает терпение гостя и точки прогресса
+    document.body.classList.toggle("in-dialog", name === "dialog");
+    if (name === "start") renderRank();
+    window.scrollTo(0, 0);
+  }
+
+  // ================= API =================
+  // Код доступа (план 3.6): тот же, что в переменной ACCESS_CODE на Vercel.
+  // От случайных ботов защищает, от целенаправленного взлома — нет.
+  var ACCESS_CODE = "px-diOOEaZLKJHS";
+
+  // Понятный текст ошибки по разделу 3.7 плана + исходное сообщение Google
+  function errorMessage(status, googleText) {
+    var hint;
+    if (status === 400 && /API key/i.test(googleText || "")) hint = "Ключ недействителен — проверьте переменную на Vercel";
+    else if (status === 400) hint = "Запрос отклонён";
+    else if (status === 401) hint = "Код доступа не совпадает с ACCESS_CODE на Vercel";
+    else if (status === 403) hint = "Ключ недействителен — проверьте переменную на Vercel";
+    else if (status === 404 || status === 429) hint = "Ни одна модель из списка не ответила";
+    else if (status >= 500) hint = "Сбой Google, повторите через минуту";
+    else hint = "Ошибка " + status;
+    return googleText ? hint + ": " + googleText : hint;
+  }
+
+  // Единая точка вызова модели. Ключа здесь нет — он на сервере.
+  function callGemini(req) {
+    return fetch("/api/gemini", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-access-code": ACCESS_CODE },
+      body: JSON.stringify(req)
+    }).catch(function () {
+      var err = new Error(location.protocol === "file:"
+        ? "Страница открыта как файл — функции не работают. Запустите vercel dev или откройте ссылку Vercel."
+        : "Нет сети — включите Demo-режим");
+      err.network = true;
+      throw err;
+    }).then(function (r) {
+      return r.text().then(function (raw) {
+        var data = null;
+        try { data = JSON.parse(raw); } catch (e) { /* не JSON */ }
+        if (!r.ok || !data || !data.text) {
+          var err = new Error(errorMessage(r.status, (data && data.error) || raw));
+          err.attempts = data && data.attempts;
+          throw err;
+        }
+        return data;
+      });
+    });
+  }
+
+  // ================= ВЫБОР СЦЕНАРИЯ =================
+  function findScenario(id) {
+    for (var i = 0; i < SCENARIOS.length; i++) if (SCENARIOS[i].id === id) return SCENARIOS[i];
+    return SCENARIOS[0];
+  }
+
+  function selectScenario(id) {
+    SCENARIO = findScenario(id);
+    try { localStorage.setItem(PICK_KEY, SCENARIO.id); } catch (e) { /* выбор просто не запомнится */ }
+    renderPicker();
+    renderScenario();
+    renderRank();
+  }
+
+  // Карточки выбора на главной: специальность, ситуация, строка описания, метаданные
+  function renderPicker() {
+    var box = $("sc-cards");
+    box.innerHTML = "";
+    SCENARIOS.forEach(function (s) {
+      var on = s.id === SCENARIO.id;
+      var card = el("button", "card sc-card" + (on ? " selected" : ""));
+      card.type = "button";
+      card.setAttribute("aria-pressed", on ? "true" : "false");
+      card.appendChild(el("span", "badge", s.specialty));
+      card.appendChild(el("h3", "", s.title));
+      card.appendChild(el("p", "sc-blurb", s.blurb));
+      card.appendChild(el("span", "caption", s.maxTurns + " реплик · ~" + s.duration.replace("около ", "")));
+      card.addEventListener("click", function () { selectScenario(s.id); });
+      box.appendChild(card);
+    });
+  }
+
+  // Подписи, зависящие от сценария: шапка, шкала, поле ввода, результат
+  function applyScenarioLabels() {
+    var w = SCENARIO.words;
+    $("hdr-spec").textContent = SCENARIO.specialty.split(" · ")[0];
+    $("hdr-pat-label").textContent = SCENARIO.scale.name;
+    $("dlg-input").placeholder = "Ваша реплика " + w.partnerDat + "…";
+    $("timer-note").textContent = "45 секунд на реплику. Молчание " + w.partner.toLowerCase() +
+      " тоже заметит. Выключите для первого знакомства или показа на сцене.";
+    $("res-pat-label").textContent = SCENARIO.scale.end;
+    $("chart-pat-label").textContent = SCENARIO.scale.name + ", %";
+    $("sc-disclaimer").textContent = SCENARIO.disclaimer;
+    $("sc-disclaimer").classList.toggle("hidden", !SCENARIO.disclaimer);
+  }
+
+  // ================= ЭКРАН СЦЕНАРИЯ =================
+  function renderScenario() {
+    applyScenarioLabels();
+    $("sc-badge").textContent = SCENARIO.specialty;
+    $("sc-title").textContent = SCENARIO.title;
+    $("sc-situation").textContent = SCENARIO.situation;
+    $("sc-task").textContent = SCENARIO.task;
+    $("sc-meta").textContent = SCENARIO.maxTurns + " реплик · " + SCENARIO.duration +
+      " · оценка по " + SCENARIO.checklist.length + " критериям";
+
+    var byId = {};
+    SCENARIO.checklist.forEach(function (c) { byId[c.id] = c.text; });
+
+    var groups = $("sc-groups");
+    groups.innerHTML = "";
+    SCENARIO.competencies.forEach(function (comp) {
+      var g = document.createElement("div");
+      g.className = "group";
+      var head = document.createElement("div");
+      head.className = "group-name";
+      var dot = document.createElement("span");
+      dot.className = "cdot";
+      dot.style.background = "var(" + comp.color + ")";
+      var name = document.createElement("span");
+      name.className = "eyebrow";
+      name.textContent = comp.name;
+      head.appendChild(dot);
+      head.appendChild(name);
+      var ul = document.createElement("ul");
+      comp.items.forEach(function (id) {
+        var li = document.createElement("li");
+        li.textContent = byId[id];
+        ul.appendChild(li);
+      });
+      g.appendChild(head);
+      g.appendChild(ul);
+      groups.appendChild(g);
+    });
+  }
+
+  // ================= ШКАЛА СОСТОЯНИЯ (терпение гостя / состояние пациента) =================
+  function norm(s) { return String(s).toLowerCase().replace(/ё/g, "е"); }
+  function hasAny(text, words) { return words.some(function (w) { return text.indexOf(norm(w)) !== -1; }); }
+
+  // Δ за одну реплику — кодом: общая механика PATIENCE + правила сценария. Модель не участвует.
+  function patienceDelta(text, seconds, timedOut) {
+    var P = PATIENCE;
+    var d = P.dDecay;
+    if (timedOut) return { delta: d + P.dTimeout, excuse: false };
+    if (seconds < P.fastSec) d += P.dFast;
+    if (text.length < P.shortLen) d += P.dShort;
+    var t = norm(text);
+    var q = text.indexOf("?") !== -1;
+    var excuse = false;
+    SCENARIO.patienceRules.forEach(function (r) {
+      var hit = (r.words && hasAny(t, r.words)) || (r.digits && /\d/.test(t)) || (r.question && q);
+      if (r.needQuestion && !q) hit = false;
+      if (!hit) return;
+      d += r.d;
+      if (r.excuse) excuse = true;
+    });
+    return { delta: d, excuse: excuse };
+  }
+
+  function patienceLevel(p) {
+    var L = SCENARIO.scale.levels;
+    if (p >= 60) return { word: L[0], color: "--accent-3" };
+    if (p >= 30) return { word: L[1], color: "--accent-2" };
+    if (p > 10)  return { word: L[2], color: "--fail" };
+    return { word: L[3], color: "--fail" };
+  }
+
+  // Шкала 120×8, inline SVG. Заливка — прямоугольник, обрезанный скруглённой дорожкой.
+  function barSvg(id) {
+    return '<svg class="pat-bar" id="' + id + '" width="120" height="8" viewBox="0 0 120 8" aria-hidden="true">' +
+      '<defs><clipPath id="' + id + '-clip"><rect width="120" height="8" rx="4"/></clipPath></defs>' +
+      '<g clip-path="url(#' + id + '-clip)">' +
+      '<rect width="120" height="8" style="fill: var(--track)"/>' +
+      '<rect class="fill" width="120" height="8"/></g></svg>';
+  }
+
+  function setBar(svg, p) {
+    var fill = svg.querySelector(".fill");
+    fill.style.transform = "scaleX(" + (p / 100) + ")";
+    fill.style.fill = "var(" + patienceLevel(p).color + ")";
+  }
+
+  function renderPatience(change) {
+    var bar = $("pat-bar");
+    setBar(bar, dlg.patience);
+    $("pat-word").textContent = patienceLevel(dlg.patience).word;
+    var chip = $("pat-delta");
+    clearTimeout(chip._t);
+    if (!change) { chip.classList.remove("show"); return; }
+    chip.textContent = (change > 0 ? "+" : "−") + Math.abs(change);
+    chip.style.color = change > 0 ? "var(--accent-3)" : "var(--fail)";
+    chip.classList.add("show");
+    chip._t = setTimeout(function () { chip.classList.remove("show"); }, 1600);
+    if (change < 0) {
+      bar.classList.remove("nudge");
+      void bar.getBoundingClientRect(); // перезапуск анимации
+      bar.classList.add("nudge");
+    }
+  }
+
+  // ================= ТАЙМЕР ОТВЕТА =================
+  // Отсчёт идёт с момента ответа гостя. Время реплики меряется всегда, давит — только в режиме с таймером.
+  function startTurn() {
+    dlg.turnStart = Date.now();
+    if (!dlg.timerOn) return;
+    clearInterval(dlg.tick);
+    dlg.tick = setInterval(tick, 100); // не rAF: тот замирает в фоновой вкладке
+    tick();
+  }
+
+  function stopTurn() {
+    clearInterval(dlg.tick);
+    $("timer").classList.add("hidden");
+    var seconds = dlg.turnStart ? (Date.now() - dlg.turnStart) / 1000 : 0;
+    dlg.turnStart = 0;
+    return seconds;
+  }
+
+  function tick() {
+    var left = PATIENCE.limitSec - (Date.now() - dlg.turnStart) / 1000;
+    if (left <= 0) { submitTurn(SCENARIO.pauseText, true); return; }
+    drawRing(left / PATIENCE.limitSec, left);
+  }
+
+  // Тонкое кольцо рядом с «Отправить», обводка убывает через stroke-dashoffset
+  var TIMER_C = 2 * Math.PI * 13;
+
+  function drawRing(frac, left) {
+    var timer = $("timer");
+    var arc = $("timer-arc");
+    arc.style.strokeDasharray = TIMER_C;
+    arc.style.strokeDashoffset = TIMER_C * (1 - frac);
+    var urgent = left <= 10;
+    timer.classList.toggle("urgent", urgent);
+    timer.classList.remove("hidden");
+    $("timer-num").textContent = urgent ? Math.ceil(left) : "";
+  }
+
+  // ================= ДИАЛОГ =================
+  var dlg = { session: 0, history: [], pending: false, failed: false, ended: false, timerOn: true,
+              patience: PATIENCE.start, patienceLog: [], times: [], excuses: 0, leftAt: null,
+              turnStart: 0, tick: 0, run: null };
+
+  function studentTurns() {
+    return dlg.history.filter(function (m) { return m.role === "user"; }).length;
+  }
+
+  function canSend() {
+    return !dlg.pending && !dlg.failed && !dlg.ended && studentTurns() < SCENARIO.maxTurns;
+  }
+
+  // Вся история целиком в каждом запросе
+  function buildContents(history) {
+    return [{ role: "user", parts: [{ text: SCENARIO.sceneStart }] }].concat(history.map(function (m) {
+      return { role: m.role, parts: [{ text: m.text }] };
+    }));
+  }
+
+  // Лента прокручивается внутри своей колонки, страница стоит на месте
+  function scrollToEnd() {
+    var box = $("chat-scroll");
+    box.scrollTop = box.scrollHeight; // мгновенно: плавная прокрутка сбивается при частых репликах
+    setTimeout(function () { box.scrollTop = box.scrollHeight; }, 200); // после анимации появления
+  }
+
+  function addBubble(role, text, pause) {
+    var el = document.createElement("div");
+    el.className = "msg " + (role === "user" ? "msg-student" : "msg-guest") + (pause ? " pause" : "");
+    var label = document.createElement("div");
+    label.className = "msg-label";
+    label.textContent = role === "user" ? "Вы" : SCENARIO.words.partner;
+    var body = document.createElement("div");
+    body.className = "msg-text";
+    body.textContent = pause ? "Пауза — вы не ответили за 45 секунд" : text;
+    el.appendChild(label);
+    el.appendChild(body);
+    $("msgs").appendChild(el);
+    scrollToEnd();
+    return el;
+  }
+
+  function addTyping() {
+    var el = addBubble("model", "");
+    var body = el.querySelector(".msg-text");
+    body.className = "msg-text typing";
+    body.innerHTML = "<span></span><span></span><span></span>";
+    el.setAttribute("aria-label", SCENARIO.words.partner + " печатает");
+    scrollToEnd();
+    return el;
+  }
+
+  function addError(e) {
+    if (e.attempts) console.warn("Попытки моделей:", e.attempts);
+    var el = document.createElement("div");
+    el.className = "msg msg-error";
+    var text = document.createElement("div");
+    text.textContent = SCENARIO.words.partner + " не ответил. " + e.message;
+    var retry = document.createElement("button");
+    retry.className = "btn btn-secondary";
+    retry.textContent = "Повторить";
+    retry.addEventListener("click", function () {
+      el.remove();
+      dlg.failed = false;
+      requestReply();
+    });
+    el.appendChild(text);
+    el.appendChild(retry);
+    // Нет сети — на сцене выручит готовый разбор
+    if (e.network) {
+      var demo = document.createElement("button");
+      demo.className = "btn btn-tertiary";
+      demo.textContent = "Показать пример разбора";
+      demo.addEventListener("click", function () { stopTurn(); dlg.session++; startDemo(); });
+      el.appendChild(demo);
+    }
+    $("msgs").appendChild(el);
+    scrollToEnd();
+  }
+
+  function updateDialog() {
+    var turns = studentTurns();
+    var max = SCENARIO.maxTurns;
+    var closed = turns >= max || dlg.ended;
+
+    var dots = $("dlg-dots");
+    dots.innerHTML = "";
+    for (var i = 0; i < max; i++) {
+      var d = document.createElement("span");
+      d.className = "pdot" + (i < turns ? " done" : "");
+      dots.appendChild(d);
+    }
+    $("dlg-count").textContent = turns + " из " + max;
+
+    $("dlg-input").disabled = closed;
+    if (closed) $("dlg-input").value = "";
+    $("btn-send").disabled = !canSend();
+    $("btn-finish").disabled = dlg.pending || turns === 0;
+    // Когда реплики кончились, главным действием становится «Завершить»
+    $("btn-finish").className = "btn " + (closed ? "btn-primary" : "btn-secondary");
+    $("btn-send").classList.toggle("hidden", closed);
+
+    var hint = $("dlg-hint");
+    hint.classList.toggle("limit-note", closed && !dlg.pending);
+    if (dlg.ended) hint.textContent = SCENARIO.outcomes.leftHint;
+    else if (closed && !dlg.pending) hint.textContent = "Реплики закончились. Нажмите «Завершить», чтобы получить разбор.";
+    else hint.textContent = "Ctrl+Enter — отправить";
+  }
+
+  function startDialog() {
+    stopTurn();
+    dlg.session++;
+    dlg.history = [{ role: "model", text: SCENARIO.firstMessage }];
+    dlg.pending = false;
+    dlg.failed = false;
+    dlg.ended = false;
+    dlg.timerOn = $("opt-timer").checked;
+    dlg.patience = PATIENCE.start;
+    dlg.patienceLog = [];
+    dlg.times = [];
+    dlg.excuses = 0;
+    dlg.leftAt = null;
+    dlg.run = null;
+    $("msgs").innerHTML = "";
+    $("dlg-title").textContent = SCENARIO.title;
+    $("dlg-role").textContent = "Вы: " + SCENARIO.role;
+    $("dlg-input").value = "";
+    show("dialog");
+    addBubble("model", SCENARIO.firstMessage);
+    renderPatience(0);
+    updateDialog();
+    $("dlg-input").focus();
+    startTurn();
+  }
+
+  function sendMessage() {
+    var input = $("dlg-input");
+    var text = input.value.trim();
+    if (!text || !canSend()) return;
+    input.value = "";
+    submitTurn(text, false);
+  }
+
+  // Ход студента: обычная реплика или пауза по таймеру (черновик в поле при паузе остаётся)
+  function submitTurn(text, timedOut) {
+    if (!canSend()) return;
+    var seconds = stopTurn();
+    var r = patienceDelta(text, seconds, timedOut);
+    var before = dlg.patience;
+    dlg.patience = Math.max(0, Math.min(100, before + r.delta));
+    dlg.patienceLog.push(dlg.patience);
+    dlg.times.push(timedOut ? null : Math.round(seconds));
+    if (r.excuse) dlg.excuses++;
+    dlg.history.push(timedOut ? { role: "user", text: text, pause: true } : { role: "user", text: text });
+    addBubble("user", text, timedOut);
+    renderPatience(dlg.patience - before);
+    if (dlg.patience === 0) { guestLeaves(); return; }
+    requestReply();
+  }
+
+  // Терпение = 0: гость уходит, диалог обрывается, оценка — по тому, что успели
+  function guestLeaves() {
+    dlg.ended = true;
+    dlg.leftAt = studentTurns();
+    var note = document.createElement("div");
+    note.className = "sys-note";
+    note.textContent = SCENARIO.outcomes.leftNote;
+    $("msgs").appendChild(note);
+    scrollToEnd();
+    updateDialog();
+    var session = dlg.session;
+    setTimeout(function () { if (session === dlg.session) finishDialog(); }, 2500);
+  }
+
+  function requestReply() {
+    var session = dlg.session;
+    dlg.pending = true;
+    updateDialog();
+    var typing = addTyping();
+    var system = SCENARIO.rolePrompt + (dlg.patience <= PATIENCE.edge ? "\n\n" + SCENARIO.edgePrompt : "");
+
+    callGemini({
+      system: system,
+      contents: buildContents(dlg.history),
+      generationConfig: { temperature: 0.9 }
+    }).then(function (data) {
+      if (session !== dlg.session) return;
+      typing.remove();
+      var reply = data.text.trim();
+      dlg.history.push({ role: "model", text: reply });
+      addBubble("model", reply);
+    }).catch(function (e) {
+      if (session !== dlg.session) return;
+      typing.remove();
+      dlg.failed = true;
+      addError(e);
+    }).then(function () {
+      if (session !== dlg.session) return;
+      dlg.pending = false;
+      updateDialog();
+      if (canSend()) {
+        $("dlg-input").focus();
+        startTurn();
+      }
+    });
+  }
+
+  function finishDialog() {
+    if (dlg.pending || studentTurns() === 0) return;
+    stopTurn();
+    dlg.session++; // отменяет ответ и уход гостя, если они ещё в пути
+    dlg.run = buildRun();
+    startAnalysis(dlg.run);
+  }
+
+  // Итог прогона. items/summary/passed заполняет оценка.
+  function buildRun() {
+    var real = dlg.times.filter(function (s) { return s !== null; });
+    return {
+      at: new Date().toISOString(),
+      scenario: SCENARIO.id,
+      demo: false,
+      turns: studentTurns(),
+      total: SCENARIO.checklist.length,
+      passed: null,
+      patience: dlg.patience,
+      patienceLog: dlg.patienceLog.slice(),
+      leftAt: dlg.leftAt,
+      excuses: dlg.excuses,
+      replies: real.length,
+      fast: dlg.times.length > 0 && real.length === dlg.times.length &&
+            real.every(function (s) { return s < PATIENCE.fastBadgeSec; }),
+      timer: dlg.timerOn,
+      history: dlg.history.slice(),
+      items: [],
+      summary: ""
+    };
+  }
+
+  // ================= ХРАНИЛИЩЕ, РАНГИ, ЗНАЧКИ =================
+  function loadSessions() {
+    try {
+      var a = JSON.parse(localStorage.getItem(STORE_PREFIX + SCENARIO.id) || "[]");
+      return Array.isArray(a) ? a : [];
+    } catch (e) { return []; }
+  }
+
+  // Только оценённые прогоны — для рангов, «Роста» и динамики
+  function scoredSessions() {
+    return loadSessions().filter(function (s) { return s && typeof s.passed === "number"; });
+  }
+
+  function saveSession(run) {
+    try {
+      var a = loadSessions();
+      a.push(run);
+      localStorage.setItem(STORE_PREFIX + SCENARIO.id, JSON.stringify(a.slice(-50)));
+    } catch (e) { /* хранилище недоступно — прогон просто не сохранится */ }
+  }
+
+  function rankIndex(passed, patience) {
+    if (passed == null) return -1;
+    if (passed >= 8 && patience >= 70) return 3;
+    if (passed >= 6) return 2;
+    if (passed >= 4) return 1;
+    return 0;
+  }
+
+  // Ранг — по лучшему результату из сохранённых прогонов
+  function bestRank(sessions) {
+    return sessions.reduce(function (m, s) { return Math.max(m, rankIndex(s.passed, s.patience)); }, 0);
+  }
+
+  function renderRank() {
+    var i = bestRank(scoredSessions());
+    $("rank-name").textContent = SCENARIO.ranks[i];
+    $("hdr-rank").textContent = SCENARIO.ranks[i];
+    $("rank-next").textContent = RANKS[i].next ? "До следующего: " + RANKS[i].next : "Высший ранг";
+  }
+
+  function earnedBadges(run, prev) {
+    return {
+      calm: run.replies > 0 && run.excuses === 0,
+      retained: run.leftAt === null && run.patience >= 85,
+      clean: run.passed !== null && run.passed === run.total,
+      fast: run.fast,
+      growth: !!prev && run.passed !== null && run.passed > prev.passed
+    };
+  }
+
+  function renderBadges(box, earned) {
+    var n = 0;
+    box.innerHTML = BADGES.map(function (b) {
+      var on = earned[b.id];
+      var style = on ? ' style="color: var(' + b.color + '); animation-delay: ' + (n++ * 100) + 'ms"' : "";
+      return '<div class="bdg ' + (on ? "on" : "off") + '" title="' + b.hint + '">' +
+        '<svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"' +
+        style + ' aria-hidden="true">' + b.shape + '</svg>' +
+        '<div class="lbl">' + b.name + '</div></div>';
+    }).join("");
+  }
+
+  function outcomeText(run) {
+    var o = SCENARIO.outcomes;
+    if (run.leftAt) return o.left.replace("{n}", run.leftAt);
+    if (run.patience >= 70) return o.good;
+    return o.mid;
+  }
+
+  // ================= ОЦЕНКА (режим assess) =================
+  // Отдельный запрос с низкой температурой: модель-оценщик не видит промпт роли.
+  function transcriptForModel(history) {
+    var w = SCENARIO.words, n = 0;
+    return history.map(function (m) {
+      if (m.role !== "user") return w.partner + ": " + m.text;
+      n++;
+      return w.student + " (реплика " + n + "): " + (m.pause ? "[молчит — не ответил за 45 секунд]" : m.text);
+    }).join("\n\n");
+  }
+
+  function assessPrompt() {
+    var w = SCENARIO.words;
+    return [
+      "Ты — методист колледжа. Оцениваешь учебный диалог: студент в роли «" + SCENARIO.role + "» разговаривает " + w.partnerWith + ". Сценарий: «" + SCENARIO.title + "». Ты не участвовал в диалоге и оцениваешь беспристрастно.",
+      "",
+      "ПРАВИЛА ОЦЕНКИ",
+      "1. Оценивай только реплики " + w.studentGen + ". Реплики " + w.partnerGen + " — контекст, а не заслуга студента.",
+      "2. Будь строгим: passed = true, только если действие явно видно в тексте реплик " + w.studentGen + ". Сомневаешься — false.",
+      "3. Короткие, грубые, односложные ответы не выполняют пункты. Если студент почти ничего по существу не сказал — большинство пунктов false.",
+      "4. «[молчит — не ответил за 45 секунд]» — это пауза. Она ничего не выполняет и не цитируется.",
+      "5. Пункты с пометкой [ОБРАТНЫЙ] проверяют, что студент НЕ сделал запрещённого. passed = true, если нарушения нет ни в одной реплике. passed = false, если нарушение есть хотя бы в одной реплике — тогда quote = фрагмент с нарушением. Для выполненного обратного пункта quote — пустая строка или фрагмент, где студент поступил правильно вместо нарушения. Не путай логику: отсутствие нарушения — это выполнение.",
+      "",
+      "ЦИТАТЫ — САМОЕ ВАЖНОЕ",
+      "- quote — дословный непрерывный фрагмент ОДНОЙ реплики " + w.studentGen + ", символ в символ, как в расшифровке.",
+      "- Запрещено: перефразировать, исправлять опечатки, менять регистр и пунктуацию, сокращать, склеивать куски разных реплик, вставлять многоточия, добавлять кавычки, цитировать " + w.partnerGen + ", включать «" + w.student + " (реплика N):».",
+      "- Для выполненного пункта — фрагмент, где это сделано. Для невыполненного — фрагмент, где это нужно было сделать или где допущено нарушение.",
+      "- Если подходящего фрагмента нет — quote: \"\". Пустая цитата лучше неточной.",
+      "",
+      "feedback — 1–2 предложения на «вы»: что именно сделано или чего не хватило; для невыполненного пункта — пример фразы, как сказать лучше.",
+      "summary — 1–2 предложения: общий вывод для преподавателя.",
+      "",
+      "ЧЕК-ЛИСТ (id — пункт. Критерий)",
+      SCENARIO.checklist.map(function (c) {
+        return c.id + (c.inverse ? " [ОБРАТНЫЙ]" : "") + " — " + c.text + ". " + c.criterion;
+      }).join("\n"),
+      "",
+      "Верни оценку по всем " + SCENARIO.checklist.length + " пунктам, id — строго из списка."
+    ].join("\n");
+  }
+
+  var ASSESS_SCHEMA = {
+    type: "OBJECT",
+    properties: {
+      items: {
+        type: "ARRAY",
+        items: {
+          type: "OBJECT",
+          properties: {
+            id: { type: "STRING" },
+            quote: { type: "STRING" },
+            passed: { type: "BOOLEAN" },
+            feedback: { type: "STRING" }
+          },
+          required: ["id", "quote", "passed", "feedback"],
+          propertyOrdering: ["id", "quote", "passed", "feedback"]
+        }
+      },
+      summary: { type: "STRING" }
+    },
+    required: ["items", "summary"],
+    propertyOrdering: ["items", "summary"]
+  };
+
+  var JSON_ONLY = "\n\nФОРМАТ ОТВЕТА: только JSON, без пояснений и без ```. Структура: " +
+    '{"items":[{"id":"greet","quote":"…","passed":true,"feedback":"…"}],"summary":"…"}';
+
+  // Уровень 3: срезать ```json-обёртку, при неудаче — подстрока от первой { до последней }
+  function parseAssessment(text) {
+    var t = String(text || "").trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+    var data = null;
+    try { data = JSON.parse(t); } catch (e) {
+      var a = t.indexOf("{"), b = t.lastIndexOf("}");
+      if (a !== -1 && b > a) {
+        try { data = JSON.parse(t.slice(a, b + 1)); } catch (e2) { /* разберём ниже */ }
+      }
+    }
+    if (!data || !Array.isArray(data.items) || data.items.length === 0) {
+      throw new Error("Модель вернула оценку в неверном формате");
+    }
+    return data;
+  }
+
+  // Сверка цитаты с репликами студента: без учёта регистра, ё/е, пунктуации и лишних пробелов,
+  // но слова — подряд и внутри одной реплики
+  function squash(s) { return norm(String(s)).replace(/[^a-zа-я0-9]+/g, " ").trim(); }
+
+  function quoteFound(quote, history) {
+    var q = squash(quote);
+    if (!q) return false;
+    return history.some(function (m) {
+      return m.role === "user" && !m.pause && (" " + squash(m.text) + " ").indexOf(" " + q + " ") !== -1;
+    });
+  }
+
+  // Достраивает недостающие пункты из SCENARIO.checklist, чтобы разбор не разъезжался
+  function normalize(raw, history) {
+    var byId = {};
+    raw.items.forEach(function (it) { if (it && it.id) byId[String(it.id).trim()] = it; });
+    var items = SCENARIO.checklist.map(function (c) {
+      var it = byId[c.id];
+      var quote = it && typeof it.quote === "string" ? it.quote.trim().replace(/^[«"“„]+|[»"”]+$/g, "").trim() : "";
+      var feedback = it && typeof it.feedback === "string" ? it.feedback.trim() : "";
+      return {
+        id: c.id,
+        text: c.text,
+        inverse: !!c.inverse,
+        passed: !!it && (it.passed === true || it.passed === "true"),
+        quote: quote,
+        fabricated: quote !== "" && !quoteFound(quote, history),
+        feedback: it ? feedback : "Модель не вернула оценку по этому пункту."
+      };
+    });
+    return { items: items, summary: typeof raw.summary === "string" ? raw.summary.trim() : "" };
+  }
+
+  function assess(run) {
+    var system = assessPrompt();
+    var contents = [{ role: "user", parts: [{ text: "РАСШИФРОВКА ДИАЛОГА\n\n" + transcriptForModel(run.history) }] }];
+    // Уровень 1: ответ по responseSchema
+    return callGemini({
+      system: system,
+      contents: contents,
+      generationConfig: { temperature: 0.2, responseMimeType: "application/json", responseSchema: ASSESS_SCHEMA }
+    }).then(function (d) {
+      return parseAssessment(d.text);
+    }).catch(function (e) {
+      if (e.network) throw e;
+      console.warn("Оценка по схеме не удалась, повтор без схемы:", e.message);
+      // Уровень 2: без схемы, с текстовой инструкцией вернуть чистый JSON
+      return callGemini({
+        system: system + JSON_ONLY,
+        contents: contents,
+        generationConfig: { temperature: 0.2 }
+      }).then(function (d) { return parseAssessment(d.text); });
+    }).then(function (raw) {
+      return normalize(raw, run.history);
+    });
+  }
+
+  // ================= ЭКРАН АНАЛИЗА =================
+  var an = { session: 0, run: null };
+  // prefers-reduced-motion: пункты всё равно проступают по очереди, но почти без пауз
+  var REDUCED = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  var AN_STEP_MS = REDUCED ? 120 : 500;
+  var VERDICT_MS = REDUCED ? 300 : 900;
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  function compDot(color) {
+    var d = el("span", "cdot");
+    d.style.background = "var(" + color + ")";
+    return d;
+  }
+
+  function checklistText(id) {
+    for (var i = 0; i < SCENARIO.checklist.length; i++) {
+      if (SCENARIO.checklist[i].id === id) return SCENARIO.checklist[i].text;
+    }
+    return id;
+  }
+
+  function buildAnalysisList() {
+    var box = $("an-list");
+    box.innerHTML = "";
+    SCENARIO.competencies.forEach(function (comp) {
+      var g = el("div", "an-group");
+      var head = el("div", "group-name an-step");
+      head.appendChild(compDot(comp.color));
+      head.appendChild(el("span", "eyebrow", comp.name));
+      g.appendChild(head);
+      comp.items.forEach(function (id) {
+        var row = el("div", "an-row an-step");
+        row.setAttribute("data-id", id);
+        row.appendChild(el("span", "", checklistText(id)));
+        var bar = el("span", "an-bar");
+        bar.appendChild(el("i"));
+        row.appendChild(bar);
+        g.appendChild(row);
+      });
+      box.appendChild(g);
+    });
+  }
+
+  // preset — готовая оценка (Demo-режим): экран анализа и результат — тот же код, без запроса к модели
+  function startAnalysis(run, preset) {
+    var session = ++an.session;
+    an.run = run;
+    buildAnalysisList();
+    $("an-error").classList.add("hidden");
+    $("an-note").classList.remove("hidden");
+    $("an-note").textContent = "Обычно занимает 5–10 секунд";
+    show("analysis");
+
+    // Пункты проступают группами: название компетенции, затем её пункты, шаг 500 мс
+    var steps = document.querySelectorAll("#an-list .an-step");
+    var ready = false;
+    var shown = new Promise(function (resolve) {
+      Array.prototype.forEach.call(steps, function (s, i) {
+        setTimeout(function () { if (session === an.session) s.classList.add("in"); }, i * AN_STEP_MS);
+      });
+      setTimeout(resolve, steps.length * AN_STEP_MS);
+    });
+    shown.then(function () {
+      if (!ready && session === an.session) $("an-note").textContent = "Ещё несколько секунд — сверяю цитаты с расшифровкой…";
+    });
+
+    var result = (preset ? Promise.resolve(preset) : assess(run)).then(function (a) { ready = true; return a; });
+
+    Promise.all([shown, result]).then(function (res) {
+      if (session !== an.session) return;
+      var a = res[1];
+      run.items = a.items;
+      run.summary = a.summary;
+      run.passed = a.items.filter(function (it) { return it.passed; }).length;
+      revealVerdicts(a.items);
+      setTimeout(function () {
+        if (session !== an.session) return;
+        renderResult(run); // до saveSession: сравнение идёт с прошлыми прогонами
+        if (!run.demo) saveSession(run);
+        show("result");
+        animateResult();
+      }, VERDICT_MS);
+    }).catch(function (e) {
+      if (session !== an.session) return;
+      if (e.attempts) console.warn("Попытки моделей:", e.attempts);
+      $("an-note").classList.add("hidden");
+      $("an-error-text").textContent = e.message;
+      $("an-error").classList.remove("hidden");
+    });
+  }
+
+  // Перед переходом к результату полоски окрашиваются вердиктом
+  function revealVerdicts(items) {
+    items.forEach(function (it) {
+      var row = document.querySelector('#an-list .an-row[data-id="' + it.id + '"]');
+      if (row) row.classList.add(it.passed ? "pass" : "fail");
+    });
+  }
+
+  // ================= ЭКРАН РЕЗУЛЬТАТА =================
+  function competencyScores(items) {
+    var ok = {};
+    items.forEach(function (it) { ok[it.id] = it.passed; });
+    return SCENARIO.competencies.map(function (c) {
+      return {
+        id: c.id, name: c.name, phrase: c.phrase, color: c.color, total: c.items.length,
+        passed: c.items.filter(function (id) { return ok[id]; }).length
+      };
+    });
+  }
+
+  function scoreColor(pct) {
+    if (pct >= 70) return "--pass";
+    if (pct >= 40) return "--warn";
+    return "--fail";
+  }
+
+  // Кольцо 140×14: четыре дуги по компетенциям подряд, длина — число выполненных пунктов
+  function renderRing(run, comps) {
+    var R = 63, C = 2 * Math.PI * R, unit = C / run.total, GAP = 2;
+    var pct = Math.round(run.passed / run.total * 100);
+    var arcs = "", offset = 0;
+    comps.forEach(function (c) {
+      if (!c.passed) return;
+      var len = Math.max(c.passed * unit - GAP, 1);
+      arcs += '<circle class="ring-arc" cx="70" cy="70" r="' + R + '" fill="none" stroke-width="14"' +
+        ' style="stroke: var(' + c.color + ')"' +
+        ' stroke-dasharray="' + len.toFixed(2) + ' ' + C.toFixed(2) + '" stroke-dashoffset="' + len.toFixed(2) + '"' +
+        ' transform="rotate(' + (-90 + offset / C * 360).toFixed(2) + ' 70 70)"/>';
+      offset += c.passed * unit;
+    });
+    $("res-ring").innerHTML =
+      '<svg width="140" height="140" viewBox="0 0 140 140" role="img" aria-label="' + run.passed + ' из ' + run.total + '">' +
+      '<circle cx="70" cy="70" r="' + R + '" fill="none" stroke-width="14" style="stroke: var(--track)"/>' + arcs +
+      '<text x="70" y="74" text-anchor="middle" class="ring-num">' + run.passed + '/' + run.total + '</text>' +
+      '<text x="70" y="94" text-anchor="middle" class="ring-pct" style="fill: var(' + scoreColor(pct) + ')">' + pct + '%</text>' +
+      '</svg>';
+  }
+
+  function renderLegend(comps) {
+    var ul = $("res-legend");
+    ul.innerHTML = "";
+    comps.forEach(function (c) {
+      var li = el("li");
+      li.appendChild(compDot(c.color));
+      li.appendChild(el("span", "", c.name));
+      li.appendChild(el("span", "v", c.passed + "/" + c.total));
+      ul.appendChild(li);
+    });
+  }
+
+  // Индекс самой слабой компетенции; -1, если все на одном уровне
+  function weakestIndex(comps) {
+    var r = comps.map(function (c) { return c.passed / c.total; });
+    var min = Math.min.apply(null, r), max = Math.max.apply(null, r);
+    return min === max ? -1 : r.indexOf(min);
+  }
+
+  function renderProfile(comps) {
+    var box = $("res-profile");
+    box.innerHTML = "";
+    var weak = weakestIndex(comps);
+    comps.forEach(function (c, i) {
+      var row = el("div", "profile-row" + (i === weak ? " weak" : ""));
+      var name = el("div", "pname", c.name);
+      if (i === weak) name.appendChild(el("span", "caption growth", "зона роста"));
+      var bar = el("div", "pbar");
+      var fill = el("i");
+      fill.style.background = "var(" + c.color + ")";
+      fill.style.transitionDelay = (i * 80) + "ms";
+      fill.setAttribute("data-w", Math.round(c.passed / c.total * 100) + "%");
+      bar.appendChild(fill);
+      row.appendChild(name);
+      row.appendChild(bar);
+      row.appendChild(el("div", "v", c.passed + "/" + c.total));
+      box.appendChild(row);
+    });
+  }
+
+  // Главный вывод — кодом по подсчёту, не моделью
+  function conclusionText(comps, run) {
+    var r = comps.map(function (c) { return c.passed / c.total; });
+    var min = Math.min.apply(null, r), max = Math.max.apply(null, r);
+    if (min === max) {
+      if (max === 1) return "Все компетенции закрыты полностью — " + run.passed + " из " + run.total + ".";
+      if (max === 0) return "Ни одна компетенция пока не закрыта. Начните с контакта: поздоровайтесь, представьтесь и извинитесь.";
+      return "Все компетенции на одном уровне. Зона роста — невыполненные пункты ниже.";
+    }
+    return "Сильнее всего — " + comps[r.indexOf(max)].phrase + ". Слабее всего — " + comps[r.indexOf(min)].phrase + ".";
+  }
+
+  function itemCard(it) {
+    var card = el("div", "card item " + (it.passed ? "pass" : "fail"));
+    var head = el("div", "item-head");
+    head.appendChild(el("h3", "", it.text));
+    head.appendChild(el("span", "status", it.passed ? "Выполнено" : "Не выполнено"));
+    card.appendChild(head);
+    if (it.inverse) card.appendChild(el("p", "caption inverse-note", "Обратный пункт: засчитывается, если этого не было"));
+    if (it.quote) {
+      card.appendChild(el("blockquote", "quote", "«" + it.quote + "»"));
+      if (it.fabricated) card.appendChild(el("span", "warn-badge", "цитата не подтверждена"));
+    } else {
+      var none = it.inverse
+        ? (it.passed ? "Нарушений в ваших репликах нет" : "Цитата с нарушением не приведена")
+        : (it.passed ? "Цитата не приведена" : "В ваших репликах этого нет");
+      card.appendChild(el("p", "caption noquote", none));
+    }
+    if (it.feedback) card.appendChild(el("p", "feedback", it.feedback));
+    return card;
+  }
+
+  // Разбор сгруппирован по компетенциям, невыполненные — первыми внутри группы
+  function renderItems(items, comps) {
+    var box = $("res-items");
+    box.innerHTML = "";
+    var byId = {};
+    items.forEach(function (it) { byId[it.id] = it; });
+    SCENARIO.competencies.forEach(function (comp, ci) {
+      var group = el("div", "items-group");
+      var head = el("div", "group-name");
+      head.appendChild(compDot(comp.color));
+      head.appendChild(el("span", "eyebrow", comp.name));
+      head.appendChild(el("span", "caption", comps[ci].passed + "/" + comps[ci].total));
+      group.appendChild(head);
+      comp.items.map(function (id) { return byId[id]; })
+        .sort(function (a, b) { return a.passed - b.passed; })
+        .forEach(function (it) { group.appendChild(itemCard(it)); });
+      box.appendChild(group);
+    });
+  }
+
+  // График динамики: результат из 8 — сплошная линия, терпение — пунктир (GAMIFICATION 5)
+  function chartSvg(points, firstNo) {
+    var W = 680, H = 210, L = 28, R = 44, T = 14, B = 30;
+    var iw = W - L - R, ih = H - T - B, n = points.length, total = SCENARIO.checklist.length;
+    function x(i) { return L + (n === 1 ? iw / 2 : i * iw / (n - 1)); }
+    function ys(v) { return T + ih * (1 - v / total); }
+    function yp(p) { return T + ih * (1 - p / 100); }
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Динамика по попыткам">';
+    for (var k = 0; k <= 4; k++) {
+      var y = (T + ih * (1 - k / 4)).toFixed(1);
+      s += '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '"/>';
+      s += '<text x="' + (L - 8) + '" y="' + y + '" dy="4" text-anchor="end">' + (total * k / 4) + '</text>';
+      s += '<text x="' + (W - R + 8) + '" y="' + y + '" dy="4">' + (k * 25) + '%</text>';
+    }
+    var ps = [], pp = [];
+    points.forEach(function (p, i) {
+      ps.push(x(i).toFixed(1) + "," + ys(p.passed).toFixed(1));
+      pp.push(x(i).toFixed(1) + "," + yp(p.patience).toFixed(1));
+      s += '<text x="' + x(i).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' + (firstNo + i) + '</text>';
+    });
+    s += '<polyline class="pat" points="' + pp.join(" ") + '"/>';
+    s += '<polyline class="score" points="' + ps.join(" ") + '"/>';
+    points.forEach(function (p, i) {
+      s += '<circle class="dot-p" cx="' + x(i).toFixed(1) + '" cy="' + yp(p.patience).toFixed(1) + '" r="3"/>';
+    });
+    points.forEach(function (p, i) {
+      var cur = i === n - 1;
+      s += '<circle class="dot-s' + (cur ? " cur" : "") + '" cx="' + x(i).toFixed(1) + '" cy="' + ys(p.passed).toFixed(1) + '" r="' + (cur ? 7 : 4) + '"/>';
+    });
+    return s + '</svg>';
+  }
+
+  // Появляется только со второй попытки
+  function renderDynamics(all) {
+    var card = $("res-dyn");
+    if (all.length < 2) { card.classList.add("hidden"); return; }
+    var shown = all.slice(-8);
+    var firstNo = all.length - shown.length + 1;
+    $("res-chart").innerHTML = chartSvg(shown, firstNo);
+    $("res-dyn-caption").textContent = "Ваш прогресс: " + shown.map(function (p, i) {
+      return "попытка " + (firstNo + i) + " — " + p.passed + "/" + p.total;
+    }).join(", ");
+    card.classList.remove("hidden");
+  }
+
+  function renderTranscript(history) {
+    var box = $("res-lines");
+    box.innerHTML = "";
+    history.forEach(function (m) {
+      var p = el("p", "tline");
+      p.appendChild(el("b", "", m.role === "user" ? "Вы: " : SCENARIO.words.partner + ": "));
+      p.appendChild(document.createTextNode(m.pause ? "[пауза — не ответили за 45 секунд]" : m.text));
+      box.appendChild(p);
+    });
+    $("res-transcript").open = false;
+  }
+
+  // Demo-прогон: те же функции, данные из DEMOS, в хранилище не пишется
+  function startDemo() {
+    var d = DEMOS[SCENARIO.id];
+    var run = {
+      at: new Date().toISOString(), scenario: SCENARIO.id, demo: true,
+      turns: d.history.filter(function (m) { return m.role === "user"; }).length,
+      total: SCENARIO.checklist.length, passed: null,
+      patience: d.patience, patienceLog: d.patienceLog.slice(), leftAt: d.leftAt,
+      excuses: d.excuses, replies: d.replies, fast: d.fast, timer: d.timer,
+      history: d.history.slice(), items: [], summary: "", prev: d.prev
+    };
+    // normalize() — та же сверка цитат с расшифровкой, что у живой оценки
+    startAnalysis(run, normalize({ items: d.items, summary: d.summary }, run.history));
+  }
+
+  var lastRun = null;
+
+  function renderResult(run) {
+    lastRun = run;
+    $("res-demo").classList.toggle("hidden", !run.demo);
+    var sessions = run.demo ? (run.prev || []) : scoredSessions();
+    var prev = sessions.length ? sessions[sessions.length - 1] : null;
+    var comps = competencyScores(run.items);
+
+    $("res-outcome").textContent = outcomeText(run);
+    renderRing(run, comps);
+    renderLegend(comps);
+    $("res-pat-num").textContent = run.patience + "%";
+    setBar($("res-bar"), run.patience);
+
+    var before = bestRank(sessions);
+    var after = Math.max(before, rankIndex(run.passed, run.patience));
+    $("res-rank").textContent = "Новый ранг: " + SCENARIO.ranks[after];
+    $("res-rank").classList.toggle("hidden", after <= before);
+
+    renderProfile(comps);
+    renderBadges($("res-badges"), earnedBadges(run, prev));
+    $("res-conclusion").textContent = conclusionText(comps, run);
+    $("res-summary").textContent = run.summary ? "Комментарий оценщика: " + run.summary : "";
+    renderItems(run.items, comps);
+    renderDynamics(sessions.concat([run]));
+    renderTranscript(run.history);
+  }
+
+  // Кольцо и полосы анимируются уже на видимом экране
+  function animateResult() {
+    setTimeout(function () {
+      document.querySelectorAll("#res-ring .ring-arc").forEach(function (a) { a.style.strokeDashoffset = "0"; });
+      document.querySelectorAll("#res-profile .pbar i").forEach(function (f) { f.style.width = f.getAttribute("data-w"); });
+    }, 60);
+  }
+
+  // ================= ЭКСПОРТ CSV =================
+  // «;» — разделитель, который ждёт Excel с русской локалью; BOM — чтобы кириллица открылась без кракозябр.
+  function csvCell(v) {
+    v = v == null ? "" : String(v);
+    return /[";\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  }
+
+  function transcriptPlain(history) {
+    return (history || []).map(function (m) {
+      return (m.role === "user" ? "Студент: " : SCENARIO.words.partner + ": ") +
+        (m.pause ? "[пауза — не ответил за 45 секунд]" : m.text);
+    }).join("\n");
+  }
+
+  function exportCsv() {
+    // Все оценённые прогоны выбранного сценария; в Demo — пример с прошлыми попытками
+    var rows = lastRun && lastRun.demo ? (lastRun.prev || []).concat([lastRun]) : scoredSessions();
+    var list = SCENARIO.checklist;
+    var lines = [["№", "Дата", "Сценарий", "Demo", "Реплик", "Результат", "Из", SCENARIO.scale.name + ", %",
+                  "Ушёл на реплике", "Таймер"]
+      .concat(list.map(function (c) { return c.text; }))
+      .concat(list.map(function (c) { return "Цитата: " + c.text; }))
+      .concat(["Комментарий оценщика", "Расшифровка"])];
+
+    var done = list.map(function () { return 0; });
+    rows.forEach(function (s, i) {
+      var by = {};
+      (s.items || []).forEach(function (it) { by[it.id] = it; });
+      list.forEach(function (c, k) { if (by[c.id] && by[c.id].passed) done[k]++; });
+      lines.push([i + 1, s.at ? new Date(s.at).toLocaleString("ru-RU") : "", SCENARIO.title, s.demo ? "да" : "",
+                  s.turns == null ? "" : s.turns, s.passed, s.total, s.patience, s.leftAt || "",
+                  s.timer === false ? "выкл" : "вкл"]
+        .concat(list.map(function (c) { return by[c.id] ? (by[c.id].passed ? 1 : 0) : 0; }))
+        .concat(list.map(function (c) { return by[c.id] && by[c.id].quote ? by[c.id].quote : ""; }))
+        .concat([s.summary || "", transcriptPlain(s.history)]));
+    });
+
+    // Итог по пунктам: какой пункт проваливают чаще всего — для преподавателя и слайда валидации
+    if (rows.length) {
+      var pct = done.map(function (n) { return Math.round(n / rows.length * 100); });
+      var worst = pct.indexOf(Math.min.apply(null, pct));
+      lines.push([]);
+      lines.push(["", "Выполнено, % от " + rows.length + " прогонов", "", "", "", "", "", "", "", ""]
+        .concat(pct.map(function (p) { return p + "%"; })));
+      lines.push(["", "Чаще всего не выполнен", list[worst].text]);
+    }
+
+    var csv = "﻿" + lines.map(function (r) { return r.map(csvCell).join(";"); }).join("\r\n");
+    var url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "praxis-" + SCENARIO.id + "-" + new Date().toISOString().slice(0, 10) + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    return csv;
+  }
+
+  // Для замены DEMOS своим лучшим прогоном: выполнить в консоли и вставить результат в DEMOS[id]
+  window.praxisDemoJson = function () {
+    var s = scoredSessions();
+    var best = s.reduce(function (b, x) { return !b || x.passed > b.passed ? x : b; }, null);
+    if (!best) return "Нет сохранённых прогонов этого сценария";
+    return JSON.stringify({
+      patience: best.patience, patienceLog: best.patienceLog, leftAt: best.leftAt, excuses: best.excuses,
+      replies: best.replies, fast: best.fast, timer: best.timer, history: best.history,
+      items: best.items.map(function (it) { return { id: it.id, passed: it.passed, quote: it.quote, feedback: it.feedback }; }),
+      summary: best.summary, prev: DEMOS[SCENARIO.id].prev
+    }, null, 2);
+  };
+
+  // ================= СОБЫТИЯ =================
+  $("btn-start").addEventListener("click", function () { show("scenario"); });
+  $("btn-demo").addEventListener("click", startDemo);
+  $("btn-an-demo").addEventListener("click", startDemo);
+  $("btn-csv").addEventListener("click", exportCsv);
+  $("btn-dialog").addEventListener("click", startDialog);
+  $("btn-send").addEventListener("click", sendMessage);
+  $("btn-finish").addEventListener("click", finishDialog);
+  $("btn-reassess").addEventListener("click", function () { if (an.run) startAnalysis(an.run); });
+  $("dlg-input").addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+  document.querySelectorAll("[data-go]").forEach(function (b) {
+    b.addEventListener("click", function () { show(b.getAttribute("data-go")); });
+  });
+
+  $("pat-slot").innerHTML = barSvg("pat-bar");
+  $("res-bar-slot").innerHTML = barSvg("res-bar");
+  // Последний выбранный сценарий — удобство конкретного зрителя, не обязательное состояние
+  var picked = null;
+  try { picked = localStorage.getItem(PICK_KEY); } catch (e) { /* по умолчанию первый */ }
+  // Сессии до появления второго сценария лежали без id — они гостиничные
+  try {
+    var legacy = localStorage.getItem("praxis.sessions");
+    if (legacy && !localStorage.getItem(STORE_PREFIX + "hotel")) localStorage.setItem(STORE_PREFIX + "hotel", legacy);
+    localStorage.removeItem("praxis.sessions");
+  } catch (e) { /* хранилище недоступно */ }
+  selectScenario(picked || SCENARIOS[0].id);
+</script>
+</body>
+</html>
