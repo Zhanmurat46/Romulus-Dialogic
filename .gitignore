@@ -3,4 +3,6 @@
 .env.*
 node_modules
 
-.vercel
+# Рабочие материалы — остаются на диске, в репозиторий не попадают
+DIALOGIC_FINAL_PLAN.md
+VentureHack_2026_EduTech_Final_Case.docx
