@@ -577,6 +577,40 @@
   .feedback { font-size: 14px; line-height: 1.5; }
   .res-summary { font-size: 13px; }
 
+  /* ================= РЕЖИМ СЛОЖНОСТИ И ПОСЛЕДСТВИЯ (промпт 5) ================= */
+  .mode-pick { border: 0; margin: 24px 0 0; padding: 0; min-width: 0; }
+  .mode-pick legend { padding: 0; }
+  /* Сегментный переключатель на радиокнопках: стрелки и Tab работают как у обычных radio */
+  .seg { display: inline-flex; gap: 4px; padding: 4px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; }
+  .seg label { position: relative; cursor: pointer; }
+  .seg input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+  .seg span { display: block; padding: 8px 20px; border-radius: 999px; font-weight: 600; color: var(--ink-soft); transition: background-color 150ms, color 150ms; }
+  .seg label:hover span { color: var(--ink); }
+  .seg input:checked + span { background: var(--brand); color: #fff; box-shadow: var(--shadow-1); }
+  .seg input[value="hard"]:checked + span { background: var(--fail); }
+  .seg input:focus-visible + span { box-shadow: 0 0 0 3px var(--brand-soft), 0 0 0 4px var(--brand); }
+  .mode-pick .caption { margin: 8px 0 0; }
+
+  /* Последствие в ленте диалога: появляется, когда состояние собеседника опускается на уровень */
+  .consequence {
+    align-self: center; max-width: 92%;
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px;
+    padding: 8px 14px; border-radius: 12px;
+    background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--accent-2);
+    box-shadow: var(--shadow-1);
+    font-size: 14px; line-height: 1.45; color: var(--ink);
+    animation: msgIn 180ms ease-out;
+  }
+  .consequence.lvl-2, .consequence.lvl-3 { border-left-color: var(--fail); }
+  .consequence-tag { flex: none; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+
+  /* Результат: режим сложности и «Чем закончилось для дела» */
+  #screen-result .mode-badge { margin: 0 0 12px; }
+  #screen-result .mode-badge.hard { background: rgba(179,64,47,.08); color: var(--fail); }
+  #screen-result .outcome { margin-bottom: 8px; }
+  .case-line { margin: 0 0 24px; font-size: 16px; line-height: 1.5; color: var(--ink); max-width: none; }
+  .case-line b { font-weight: 600; }
+
   @media (max-width: 640px) {
     .profile-row { grid-template-columns: 1fr 80px 36px; }
     .res-pat { border-left: 0; padding-left: 0; }
@@ -766,6 +800,15 @@
       <div class="groups" id="sc-groups"></div>
     </div>
     <p class="caption meta" id="sc-meta"></p>
+    <!-- Сложность собеседника: чек-лист и оценка те же, меняются характер и шкала -->
+    <fieldset class="mode-pick">
+      <legend class="eyebrow">Собеседник</legend>
+      <div class="seg" role="radiogroup" aria-describedby="mode-note">
+        <label><input type="radio" name="mode" value="normal" checked><span>Обычный</span></label>
+        <label><input type="radio" name="mode" value="hard"><span>Сложный</span></label>
+      </div>
+      <p class="caption" id="mode-note"></p>
+    </fieldset>
     <div class="toggle-wrap">
       <label class="toggle"><input type="checkbox" id="opt-timer" checked> Режим с таймером</label>
       <p class="caption" id="timer-note"></p>
@@ -835,7 +878,9 @@
    <div class="wrap">
     <p class="eyebrow">Результат</p>
     <p class="disclaimer hidden" id="res-demo" style="margin: 0 0 16px;">Demo-режим: пример разбора, записанный заранее. Работает без сети и не попадает в вашу статистику.</p>
+    <span class="badge mode-badge" id="res-mode"></span>
     <h1 class="outcome" id="res-outcome"></h1>
+    <p class="case-line" id="res-case"><b>Чем закончилось для дела:</b> <span id="res-case-text"></span></p>
     <div class="card res-top">
       <div id="res-ring"></div>
       <ul class="legend" id="res-legend"></ul>
@@ -936,12 +981,26 @@
         name: "Терпение гостя", end: "Терпение в конце",
         levels: ["Спокоен", "Раздражён", "На грани", "Готов уйти"]
       },
+      // Последствие для каждого уровня шкалы (индексы как в scale.levels). Показывается в ленте,
+      // когда состояние собеседника опускается на этот уровень
+      consequences: [
+        "Гость готов обсуждать варианты",
+        "Гость повышает голос — на стойку оборачиваются другие гости",
+        "Гость требует позвать старшего администратора",
+        "Гость берёт чемодан и грозит уйти в другой отель и написать отзыв"
+      ],
       outcomes: {
         good: "Гость остался доволен",
         mid: "Гость согласился, но с осадком",
         left: "Гость ушёл на {n}-й реплике",
         leftNote: "Гость ушёл, не дождавшись решения",
-        leftHint: "Гость ушёл. Открываю разбор…"
+        leftHint: "Гость ушёл. Открываю разбор…",
+        // «Чем закончилось для дела» на экране результата — по тому же исходу, что и заголовок
+        business: {
+          good: "Гость заселён, конфликт закрыт на стойке — жалобы не будет",
+          mid: "Гость заселён, но может пожаловаться управляющему или оставить сдержанный отзыв",
+          left: "Отель потерял гостя с оплаченной бронью: возврат денег и негативный отзыв"
+        }
       },
       ranks: ["Стажёр", "Администратор", "Старший администратор", "Наставник смены"],
       // Правила шкалы (GAMIFICATION 1.2). Регистр не важен, ё = е.
@@ -1040,12 +1099,23 @@
         name: "Состояние пациента", end: "Состояние в конце",
         levels: ["Стабилен", "Встревожен", "Возбуждён", "Уходит, не получив помощи"]
       },
+      consequences: [
+        "Пациент готов отвечать на вопросы",
+        "Пациент нервничает и говорит громче — очередь у кабинета оборачивается",
+        "Пациент требует заведующего и отказывается ждать",
+        "Пациент направляется к выходу, так и не показавшись врачу"
+      ],
       outcomes: {
         good: "Пациент успокоился и знает, что делать дальше",
         mid: "Пациент согласился, но остался встревожен",
         left: "Пациент ушёл, не получив помощи, на {n}-й реплике",
         leftNote: "Пациент ушёл, не получив помощи",
-        leftHint: "Пациент ушёл. Открываю разбор…"
+        leftHint: "Пациент ушёл. Открываю разбор…",
+        business: {
+          good: "Пациента с болью в груди вовремя осмотрел врач — опасное состояние не пропущено",
+          mid: "Пациент направлен к врачу, но может не дождаться осмотра и уйти",
+          left: "Пациент с болью в груди ушёл без осмотра — опасное состояние может остаться без помощи"
+        }
       },
       ranks: ["Стажёр", "Медсестра", "Старшая медсестра", "Наставник отделения"],
       // PHASE_3_5 B4: плюс — вопросы о симптомах и лекарствах, конкретный шаг, спокойный тон;
@@ -1224,6 +1294,23 @@
     edge: 25
   };
 
+  // Режим «Сложный собеседник» (DIALOGIC_FINAL_PLAN, промпт 5): другой характер собеседника и
+  // более жёсткая шкала. Чек-лист, критерии и промпт оценки те же — оцениваются одни и те же навыки.
+  var HARD = {
+    start: 55,      // стартовое терпение ниже обычных 70: собеседник уже раздражён
+    negMult: 1.5,   // отрицательные дельты patienceRules × 1.5
+    rolePrompt: [
+      "РЕЖИМ «СЛОЖНЫЙ СОБЕСЕДНИК» — этот блок важнее описания характера выше",
+      "- Ты заметно резче и напористее: короткие рубленые фразы, повышаешь голос. Передавай это словами и восклицательными знаками, без ремарок.",
+      "- Перебиваешь: если собеседник начинает с общих слов, долгих объяснений или правил, обрываешь его («Короче!», «Мне не нужны объяснения!») и возвращаешь к своей проблеме.",
+      "- С первых реплик требуешь руководителя и повторяешь это требование, пока не видишь конкретных действий.",
+      "- СКРЫТЫЕ ДАННЫЕ сообщаешь только со ВТОРОГО прямого вопроса о них. На первый вопрос отвечаешь раздражённо и уклончиво («Я уже всё сказал!», «Какая разница?»), на повторный прямой вопрос — по существу.",
+      "- Конкретные решения и искреннее извинение смягчают тебя, но медленнее, чем обычно.",
+      "- Резкость — в тоне и напоре, а не в оскорблениях: не используешь брань и не переходишь на личности.",
+      "- Можешь пригрозить уйти, но не уходишь и не прощаешься: ты всё ещё ждёшь решения."
+    ].join("\n")
+  };
+
   // Имена рангов — в SCENARIO.ranks, здесь пороги-подсказки
   var RANKS = [
     { next: "наберите 4 из 8" },
@@ -1362,6 +1449,7 @@
     $("chart-pat-label").textContent = SCENARIO.scale.name + ", %";
     $("sc-disclaimer").textContent = SCENARIO.disclaimer;
     $("sc-disclaimer").classList.toggle("hidden", !SCENARIO.disclaimer);
+    renderModeNote();
   }
 
   // ================= ЭКРАН СЦЕНАРИЯ =================
@@ -1422,18 +1510,24 @@
       var hit = (r.words && hasAny(t, r.words)) || (r.digits && /\d/.test(t)) || (r.question && q);
       if (r.needQuestion && !q) hit = false;
       if (!hit) return;
-      d += r.d;
+      // «Сложный собеседник»: отрицательные правила сценария бьют в полтора раза сильнее
+      d += r.d < 0 && dlg.mode === "hard" ? r.d * HARD.negMult : r.d;
       if (r.excuse) excuse = true;
     });
     return { delta: d, excuse: excuse };
   }
 
+  // Уровень шкалы 0–3: те же пороги, что у слов scale.levels и текстов consequences
+  function levelIndex(p) {
+    if (p >= 60) return 0;
+    if (p >= 30) return 1;
+    if (p > 10)  return 2;
+    return 3;
+  }
+
   function patienceLevel(p) {
-    var L = SCENARIO.scale.levels;
-    if (p >= 60) return { word: L[0], color: "--accent-3" };
-    if (p >= 30) return { word: L[1], color: "--accent-2" };
-    if (p > 10)  return { word: L[2], color: "--fail" };
-    return { word: L[3], color: "--fail" };
+    var i = levelIndex(p);
+    return { word: SCENARIO.scale.levels[i], color: ["--accent-3", "--accent-2", "--fail", "--fail"][i] };
   }
 
   // Шкала 120×8, inline SVG. Заливка — прямоугольник, обрезанный скруглённой дорожкой.
@@ -1508,7 +1602,7 @@
   }
 
   // ================= ДИАЛОГ =================
-  var dlg = { session: 0, history: [], pending: false, failed: false, ended: false, timerOn: true,
+  var dlg = { session: 0, history: [], pending: false, failed: false, ended: false, timerOn: true, mode: "normal",
               patience: PATIENCE.start, patienceLog: [], times: [], excuses: 0, leftAt: null,
               turnStart: 0, tick: 0, run: null };
 
@@ -1626,7 +1720,8 @@
     dlg.failed = false;
     dlg.ended = false;
     dlg.timerOn = $("opt-timer").checked;
-    dlg.patience = PATIENCE.start;
+    dlg.mode = selectedMode();
+    dlg.patience = dlg.mode === "hard" ? HARD.start : PATIENCE.start;
     dlg.patienceLog = [];
     dlg.times = [];
     dlg.excuses = 0;
@@ -1634,7 +1729,7 @@
     dlg.run = null;
     $("msgs").innerHTML = "";
     $("dlg-title").textContent = SCENARIO.title;
-    $("dlg-role").textContent = "Вы: " + SCENARIO.role;
+    $("dlg-role").textContent = "Вы: " + SCENARIO.role + (dlg.mode === "hard" ? " · сложный собеседник" : "");
     $("dlg-input").value = "";
     show("dialog");
     addBubble("model", SCENARIO.firstMessage);
@@ -1666,7 +1761,21 @@
     addBubble("user", text, timedOut);
     renderPatience(dlg.patience - before);
     if (dlg.patience === 0) { guestLeaves(); return; }
+    // Состояние опустилось на уровень ниже — в ленте появляется последствие
+    if (levelIndex(dlg.patience) > levelIndex(before)) addConsequence(levelIndex(dlg.patience));
     requestReply();
+  }
+
+  // Видимое последствие: состояние собеседника опустилось на уровень — строка в ленте диалога.
+  // Лента — role="log", поэтому экранный диктор тоже её зачитает
+  function addConsequence(level) {
+    var text = SCENARIO.consequences && SCENARIO.consequences[level];
+    if (!text) return;
+    var note = el("div", "consequence lvl-" + level);
+    note.appendChild(el("span", "consequence-tag", "Последствие:"));
+    note.appendChild(document.createTextNode(text));
+    $("msgs").appendChild(note);
+    scrollToEnd();
   }
 
   // Терпение = 0: гость уходит, диалог обрывается, оценка — по тому, что успели
@@ -1688,7 +1797,8 @@
     dlg.pending = true;
     updateDialog();
     var typing = addTyping();
-    var system = SCENARIO.rolePrompt + (dlg.patience <= PATIENCE.edge ? "\n\n" + SCENARIO.edgePrompt : "");
+    var system = SCENARIO.rolePrompt + (dlg.mode === "hard" ? "\n\n" + HARD.rolePrompt : "") +
+      (dlg.patience <= PATIENCE.edge ? "\n\n" + SCENARIO.edgePrompt : "");
 
     callGemini({
       system: system,
@@ -1744,6 +1854,7 @@
       fast: dlg.times.length > 0 && real.length === dlg.times.length &&
             real.every(function (s) { return s < PATIENCE.fastBadgeSec; }),
       timer: dlg.timerOn,
+      mode: dlg.mode,
       history: dlg.history.slice(),
       items: [],
       summary: ""
@@ -1812,6 +1923,30 @@
         style + ' aria-hidden="true">' + b.shape + '</svg>' +
         '<div class="lbl">' + b.name + '</div></div>';
     }).join("");
+  }
+
+  // «Чем закончилось для дела» — тот же исход, что в заголовке результата, но про последствия для работы
+  function businessText(run) {
+    var b = SCENARIO.outcomes.business;
+    if (!b) return "";
+    if (run.leftAt) return b.left;
+    if (run.patience >= 70) return b.good;
+    return b.mid;
+  }
+
+  function modeLabel(mode) { return mode === "hard" ? "Сложный собеседник" : "Обычный собеседник"; }
+
+  function selectedMode() {
+    var r = document.querySelector('input[name="mode"]:checked');
+    return r && r.value === "hard" ? "hard" : "normal";
+  }
+
+  function renderModeNote() {
+    var w = SCENARIO.words.partner.toLowerCase();
+    $("mode-note").textContent = selectedMode() === "hard"
+      ? "Сложный: " + w + " резче, перебивает, требует руководителя, данные сообщает только со второго вопроса. " +
+        "Шкала стартует ниже и падает быстрее. Чек-лист и оценка те же."
+      : "Обычный: " + w + " раздражён, но идёт на контакт, если говорить по делу.";
   }
 
   function outcomeText(run) {
@@ -2263,7 +2398,7 @@
       turns: d.history.filter(function (m) { return m.role === "user"; }).length,
       total: SCENARIO.checklist.length, passed: null,
       patience: d.patience, patienceLog: d.patienceLog.slice(), leftAt: d.leftAt,
-      excuses: d.excuses, replies: d.replies, fast: d.fast, timer: d.timer,
+      excuses: d.excuses, replies: d.replies, fast: d.fast, timer: d.timer, mode: d.mode || "normal",
       history: d.history.slice(), items: [], summary: "", prev: d.prev
     };
     // normalize() — та же сверка цитат с расшифровкой, что у живой оценки
@@ -2279,7 +2414,11 @@
     var prev = sessions.length ? sessions[sessions.length - 1] : null;
     var comps = competencyScores(run.items);
 
+    $("res-mode").textContent = modeLabel(run.mode);
+    $("res-mode").classList.toggle("hard", run.mode === "hard");
     $("res-outcome").textContent = outcomeText(run);
+    $("res-case-text").textContent = businessText(run);
+    $("res-case").classList.toggle("hidden", !businessText(run));
     renderRing(run, comps);
     renderLegend(comps);
     $("res-pat-num").textContent = run.patience + "%";
@@ -2329,7 +2468,7 @@
                   "Ушёл на реплике", "Таймер"]
       .concat(list.map(function (c) { return c.text; }))
       .concat(list.map(function (c) { return "Цитата: " + c.text; }))
-      .concat(["Комментарий оценщика", "Расшифровка"])];
+      .concat(["Комментарий оценщика", "Расшифровка", "Сложность собеседника"])];
 
     var done = list.map(function () { return 0; });
     rows.forEach(function (s, i) {
@@ -2341,7 +2480,7 @@
                   s.timer === false ? "выкл" : "вкл"]
         .concat(list.map(function (c) { return by[c.id] ? (by[c.id].passed ? 1 : 0) : 0; }))
         .concat(list.map(function (c) { return by[c.id] && by[c.id].quote ? by[c.id].quote : ""; }))
-        .concat([s.summary || "", transcriptPlain(s.history)]));
+        .concat([s.summary || "", transcriptPlain(s.history), s.mode === "hard" ? "сложный" : "обычный"]));
     });
 
     // Итог по пунктам: какой пункт проваливают чаще всего — для преподавателя и слайда валидации
@@ -2378,10 +2517,11 @@
       "",
       "Сценарий: " + SCENARIO.title + " (" + SCENARIO.specialty + ")",
       "Режим: " + (run.demo ? "пример разбора (Demo), не прогон студента" : "тренировка") +
-        ", таймер " + (run.timer === false ? "выключен" : "включён"),
+        ", " + modeLabel(run.mode).toLowerCase() + ", таймер " + (run.timer === false ? "выключен" : "включён"),
       "Дата: " + new Date(run.at).toLocaleString("ru-RU"),
       "Результат: " + run.passed + " из " + run.total,
       "Чем закончился разговор: " + outcomeText(run) + ". " + SCENARIO.scale.end + ": " + run.patience + "%",
+      "Чем закончилось для дела: " + businessText(run),
       "Вывод: " + conclusionText(comps, run)
     ];
     if (run.summary) lines.push("Комментарий оценщика: " + run.summary);
@@ -2495,6 +2635,7 @@
   }, { passive: true });
 
   renderEvidence();
+  document.querySelectorAll('input[name="mode"]').forEach(function (r) { r.addEventListener("change", renderModeNote); });
   $("pat-slot").innerHTML = barSvg("pat-bar");
   $("res-bar-slot").innerHTML = barSvg("res-bar");
   // Последний выбранный сценарий — удобство конкретного зрителя, не обязательное состояние
