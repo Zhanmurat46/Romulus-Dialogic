@@ -546,7 +546,7 @@
   .pdot { width: 12px; height: 12px; }
   #dlg-dots { gap: 7px !important; }
   /* На узких ноутбуках шапке диалога не хватает места: сначала прячем ранг, затем специальность */
-  @media (max-width: 1180px) { body.in-dialog .hdr-rank { display: none; } }
+  body.in-dialog .hdr-rank { display: none; }  /* ранг виден на главной и в разборе; в диалоге место занимают шкала и озвучка */
   @media (max-width: 1000px) { body.in-dialog .appbar-brand .caption { display: none; } }
 
   /* --- Результат --- */
@@ -610,6 +610,52 @@
   #screen-result .outcome { margin-bottom: 8px; }
   .case-line { margin: 0 0 24px; font-size: 16px; line-height: 1.5; color: var(--ink); max-width: none; }
   .case-line b { font-weight: 600; }
+
+  /* Самые узкие телефоны: цифра «−15» уступает место уровню шкалы — падение видно по самой шкале */
+  @media (max-width: 400px) {
+    .hdr-pat .pat-delta { display: none; }
+    body .hdr-pat .pat-word { max-width: 156px; }
+  }
+
+  /* ================= ГОЛОС (промпт 7) ================= */
+  /* Тумблер озвучки в шапке диалога: значок динамика, включённое состояние — --brand */
+  .icon-btn {
+    flex: none; width: 36px; height: 36px; padding: 0; border-radius: 50%;
+    border: 1px solid var(--line); background: var(--card); color: var(--ink-soft);
+    align-items: center; justify-content: center; cursor: pointer;
+    transition: background-color 150ms, color 150ms, border-color 150ms;
+  }
+  .icon-btn:hover { color: var(--ink); }
+  .icon-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--brand-soft), 0 0 0 4px var(--brand); }
+  .icon-btn .ico-on, .icon-btn[aria-pressed="true"] .ico-off { display: none; }
+  .icon-btn[aria-pressed="true"] .ico-on { display: block; }
+  .icon-btn[aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand); color: var(--brand); }
+
+  /* Микрофон справа внутри поля ввода. Поле всегда доступно с клавиатуры */
+  .composer-field { position: relative; }
+  .composer-field .input.has-mic { padding-right: 60px; }
+  .mic-btn {
+    position: absolute; right: 8px; top: 8px; width: 40px; height: 40px; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; border: 1px solid var(--line); background: var(--card); color: var(--brand);
+    cursor: pointer; transition: background-color 150ms, color 150ms, border-color 150ms;
+  }
+  .mic-btn:hover:not(:disabled) { background: var(--brand-soft); }
+  .mic-btn:disabled { opacity: .45; cursor: not-allowed; }
+  .mic-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--brand-soft), 0 0 0 4px var(--brand); }
+  .mic-btn.recording { background: var(--fail); border-color: var(--fail); color: #fff; animation: micPulse 1.2s ease-out infinite; }
+  @keyframes micPulse { from { box-shadow: 0 0 0 0 rgba(179,64,47,.45); } to { box-shadow: 0 0 0 12px rgba(179,64,47,0); } }
+  .mic-label {
+    position: absolute; right: 56px; top: 16px; padding: 2px 10px; border-radius: 999px;
+    background: var(--card); border: 1px solid var(--line);
+    font-size: 13px; font-weight: 600; color: var(--fail); pointer-events: none;
+  }
+  .mic-interim {
+    position: absolute; left: 15px; right: 60px; bottom: 9px; padding: 2px 0;
+    background: var(--card); color: var(--ink-soft); font-size: 15px; font-style: italic;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+  }
+  .mic-note { margin: 8px 0 0; }
 
   @media (max-width: 640px) {
     .profile-row { grid-template-columns: 1fr 80px 36px; }
@@ -677,6 +723,11 @@
         <div id="dlg-dots" style="display: flex; gap: 6px;" aria-hidden="true"></div>
         <span class="caption" id="dlg-count"></span>
       </div>
+      <!-- Озвучка реплик собеседника: показывается, только если в системе есть русский голос -->
+      <button type="button" class="icon-btn hdr-dialog hidden" id="btn-tts" aria-pressed="false" aria-label="Озвучивать реплики собеседника" title="Озвучивать реплики собеседника">
+        <svg class="ico-on" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>
+        <svg class="ico-off" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>
+      </button>
       <span class="caption hdr-rank" id="hdr-rank"></span>
     </div>
   </div>
@@ -837,7 +888,16 @@
 
     <div class="chat-input">
       <div class="wrap-x">
-        <textarea class="input" id="dlg-input" rows="3" placeholder="Ваша реплика гостю…"></textarea>
+        <div class="composer-field">
+          <textarea class="input" id="dlg-input" rows="3" placeholder="Ваша реплика гостю…"></textarea>
+          <!-- Голосовой ввод: текст дописывается в поле, отправляет только человек. Нет API — кнопки нет -->
+          <span class="mic-interim hidden" id="mic-interim" aria-hidden="true"></span>
+          <span class="mic-label hidden" id="mic-label" aria-hidden="true">Говорите…</span>
+          <button type="button" class="mic-btn hidden" id="btn-mic" aria-pressed="false" aria-label="Надиктовать реплику" title="Надиктовать реплику">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+          </button>
+        </div>
+        <p class="caption mic-note hidden" id="mic-note" role="status"></p>
         <div class="composer-row">
           <span class="caption" id="dlg-hint">Ctrl+Enter — отправить</span>
           <div class="actions">
@@ -1508,6 +1568,7 @@
     });
     // На экране диалога шапка показывает терпение гостя и точки прогресса
     document.body.classList.toggle("in-dialog", name === "dialog");
+    if (name !== "dialog") stopVoice();
     if (name === "start") renderRank();
     window.scrollTo(0, 0);
     // Доступность: кнопка, которую нажали, скрылась вместе со старым экраном — фокус переводим
@@ -1870,9 +1931,11 @@
     if (dlg.ended) hint.textContent = SCENARIO.outcomes.leftHint;
     else if (closed && !dlg.pending) hint.textContent = "Реплики закончились. Нажмите «Завершить», чтобы получить разбор.";
     else hint.textContent = "Ctrl+Enter — отправить";
+    syncMic();
   }
 
   function startDialog() {
+    stopVoice();
     stopTurn();
     dlg.session++;
     dlg.history = [{ role: "model", text: SCENARIO.firstMessage }];
@@ -1893,6 +1956,7 @@
     $("dlg-input").value = "";
     show("dialog");
     addBubble("model", SCENARIO.firstMessage);
+    speak(SCENARIO.firstMessage);
     renderPatience(0);
     updateDialog();
     $("dlg-input").focus();
@@ -1910,6 +1974,7 @@
   // Ход студента: обычная реплика или пауза по таймеру (черновик в поле при паузе остаётся)
   function submitTurn(text, timedOut) {
     if (!canSend()) return;
+    stopVoice();
     var seconds = stopTurn();
     var r = patienceDelta(text, seconds, timedOut);
     var before = dlg.patience;
@@ -1970,6 +2035,7 @@
       var reply = data.text.trim();
       dlg.history.push({ role: "model", text: reply });
       addBubble("model", reply);
+      speak(reply);
     }).catch(function (e) {
       if (session !== dlg.session) return;
       typing.remove();
@@ -1990,6 +2056,7 @@
 
   function finishDialog() {
     if (dlg.pending || studentTurns() === 0) return;
+    stopVoice();
     stopTurn();
     dlg.session++; // отменяет ответ и уход гостя, если они ещё в пути
     dlg.run = buildRun();
@@ -2721,6 +2788,183 @@
     }
   }
 
+  // ================= ГОЛОС (DIALOGIC_FINAL_PLAN, промпт 7) =================
+  // Оба элемента необязательные. Нет поддержки в браузере — кнопки просто нет, основной путь
+  // (клавиатура, отправка, таймер, оценка) от голоса не зависит ни в чём.
+
+  // --- Озвучка реплик собеседника: window.speechSynthesis, выключена по умолчанию ---
+  var TTS_KEY = "dialogic.tts";
+  var tts = { on: false, voice: null };
+
+  // Русский голос: сначала «живые» (Google в Chrome, Enhanced/Premium в Safari), потом голос системы
+  function pickRuVoice() {
+    var ru = speechSynthesis.getVoices().filter(function (v) { return /^ru([-_]|$)/i.test(v.lang); });
+    return ru.filter(function (v) { return /google|enhanced|premium/i.test(v.name); })[0] ||
+      ru.filter(function (v) { return v.default; })[0] || ru[0] || null;
+  }
+
+  function initTts() {
+    if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+    var saved = null;
+    try { saved = localStorage.getItem(TTS_KEY); } catch (e) { /* хранилище недоступно — по умолчанию выключено */ }
+    setTts(saved === "1", true);
+    function refresh() {
+      tts.voice = pickRuVoice();
+      $("btn-tts").classList.toggle("hidden", !tts.voice); // нет русского голоса — кнопки нет
+    }
+    refresh();
+    // Список голосов в Chrome приходит асинхронно
+    if (speechSynthesis.addEventListener) speechSynthesis.addEventListener("voiceschanged", refresh);
+  }
+
+  function setTts(on, silent) {
+    tts.on = on;
+    var b = $("btn-tts");
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+    b.title = on ? "Озвучка включена — нажмите, чтобы выключить" : "Озвучивать реплики собеседника";
+    if (!silent) {
+      try { localStorage.setItem(TTS_KEY, on ? "1" : "0"); } catch (e) { /* состояние просто не запомнится */ }
+    }
+    if (!on) stopSpeech();
+  }
+
+  function stopSpeech() {
+    if (window.speechSynthesis) speechSynthesis.cancel();
+  }
+
+  function speak(text) {
+    if (!tts.on || !tts.voice || !text) return;
+    speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = "ru-RU";
+    u.rate = 1.0;
+    u.voice = tts.voice;
+    speechSynthesis.speak(u);
+  }
+
+  function toggleTts() {
+    setTts(!tts.on);
+    // Включили посреди диалога — сразу озвучиваем последнюю реплику собеседника. Заодно речь запускается
+    // из нажатия пользователя: Safari на iPhone без этого не даёт озвучивать ответы, пришедшие позже
+    if (tts.on && document.body.classList.contains("in-dialog")) {
+      var last = dlg.history.filter(function (m) { return m.role === "model"; }).pop();
+      if (last) speak(last.text);
+    }
+  }
+
+  // --- Голосовой ввод: SpeechRecognition. Текст дописывается в поле, отправляет только человек ---
+  var Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var mic = { rec: null, active: false, broken: !Recognition };
+
+  function initMic() {
+    if (!Recognition) return; // нет API — кнопки нет, без предупреждений
+    $("btn-mic").classList.remove("hidden");
+    $("dlg-input").classList.add("has-mic");
+  }
+
+  // Отказ в доступе или ошибка: кнопка исчезает, под полем одна строка. Никаких alert и модальных окон
+  function micUnavailable() {
+    var hadFocus = document.activeElement === $("btn-mic");
+    mic.broken = true;
+    stopMic();
+    $("btn-mic").classList.add("hidden");
+    $("dlg-input").classList.remove("has-mic");
+    $("mic-note").textContent = "Голосовой ввод недоступен — печатайте";
+    $("mic-note").classList.remove("hidden");
+    if (hadFocus && !$("dlg-input").disabled) $("dlg-input").focus();
+  }
+
+  function setMicUi(on) {
+    mic.active = on;
+    var b = $("btn-mic");
+    b.classList.toggle("recording", on);
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+    b.setAttribute("aria-label", on ? "Остановить запись" : "Надиктовать реплику");
+    $("mic-label").classList.toggle("hidden", !on);
+    if (!on) showInterim("");
+  }
+
+  // Промежуточный текст — серым поверх нижней строки поля; финальный — в само поле
+  function showInterim(text) {
+    $("mic-interim").textContent = text;
+    $("mic-interim").classList.toggle("hidden", !text);
+  }
+
+  function appendToInput(text) {
+    var input = $("dlg-input");
+    text = String(text).trim();
+    if (!text || input.disabled) return;
+    var v = input.value;
+    input.value = v + (v && !/\s$/.test(v) ? " " : "") + text;
+    input.scrollTop = input.scrollHeight;
+  }
+
+  function startMic() {
+    if (mic.broken || mic.active || $("dlg-input").disabled) return;
+    var rec;
+    try { rec = new Recognition(); } catch (e) { micUnavailable(); return; }
+    rec.lang = "ru-RU";
+    rec.continuous = false;
+    rec.interimResults = true;
+    rec.onresult = function (e) {
+      var interim = "";
+      for (var i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) appendToInput(e.results[i][0].transcript);
+        else interim += e.results[i][0].transcript;
+      }
+      showInterim(interim);
+    };
+    rec.onerror = function (e) {
+      // «речь не услышана» и «прервали сами» — не поломка: запись просто заканчивается
+      if (e.error === "no-speech" || e.error === "aborted") return;
+      micUnavailable();
+    };
+    rec.onend = function () {
+      if (mic.rec !== rec) return;
+      mic.rec = null;
+      setMicUi(false);
+    };
+    mic.rec = rec;
+    try {
+      rec.start();
+      setMicUi(true);
+    } catch (e) {
+      micUnavailable();
+    }
+  }
+
+  function stopMic() {
+    var rec = mic.rec;
+    mic.rec = null;
+    if (rec) {
+      try { rec.abort(); } catch (e) { /* уже остановлен */ }
+    }
+    setMicUi(false);
+  }
+
+  function toggleMic() {
+    // Повторное нажатие — мягкая остановка: распознавание успеет отдать финальный текст
+    if (mic.active && mic.rec) {
+      try { mic.rec.stop(); } catch (e) { stopMic(); }
+    } else {
+      startMic();
+    }
+  }
+
+  // Поле ввода заблокировано (реплики кончились или собеседник ушёл) — микрофон тоже
+  function syncMic() {
+    if (mic.broken) return;
+    var off = $("dlg-input").disabled;
+    $("btn-mic").disabled = off;
+    if (off) stopMic();
+  }
+
+  // Отправка, «Завершить», уход с экрана диалога: речь и запись обрываются
+  function stopVoice() {
+    stopSpeech();
+    if (mic.active) stopMic();
+  }
+
   // Для замены DEMOS своим лучшим прогоном: выполнить в консоли и вставить результат в DEMOS[id]
   window.praxisDemoJson = function () {
     var s = scoredSessions();
@@ -2740,6 +2984,8 @@
   $("btn-an-demo").addEventListener("click", startDemo);
   $("btn-csv").addEventListener("click", exportCsv);
   $("btn-copy").addEventListener("click", copyReport);
+  $("btn-tts").addEventListener("click", toggleTts);
+  $("btn-mic").addEventListener("click", toggleMic);
   $("btn-dialog").addEventListener("click", startDialog);
   $("btn-send").addEventListener("click", sendMessage);
   $("btn-finish").addEventListener("click", finishDialog);
@@ -2795,6 +3041,8 @@
   }, { passive: true });
 
   renderEvidence();
+  initTts();
+  initMic();
   document.querySelectorAll('input[name="mode"]').forEach(function (r) { r.addEventListener("change", renderModeNote); });
   $("pat-slot").innerHTML = barSvg("pat-bar");
   $("res-bar-slot").innerHTML = barSvg("res-bar");
